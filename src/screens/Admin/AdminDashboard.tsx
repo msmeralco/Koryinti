@@ -1,6 +1,6 @@
-// ...existing code...
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import { LineChart, BarChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
 
@@ -34,7 +34,7 @@ const CONSUMPTION_DATA: Record<string, { months: number[]; label: string }> = {
   'Region II – Cagayan Valley': { months: [110, 130, 150, 165, 180, 200], label: 'Region II' },
   'Region III – Central Luzon': { months: [100, 125, 140, 155, 170, 190], label: 'Region III' },
   'Region IV-A – CALABARZON': { months: [95, 115, 135, 150, 165, 185], label: 'Region IV-A' },
-  'MIMAROPA': { months: [130, 155, 175, 190, 210, 235], label: 'MIMAROPA' }, // fixed key
+  'MIMAROPA': { months: [130, 155, 175, 190, 210, 235], label: 'MIMAROPA' },
   'Region V – Bicol': { months: [140, 165, 185, 205, 225, 250], label: 'Region V' },
   'Region VI – Western Visayas': { months: [105, 125, 145, 160, 175, 195], label: 'Region VI' },
   'Region VII – Central Visayas': { months: [115, 135, 155, 170, 185, 205], label: 'Region VII' },
@@ -56,6 +56,16 @@ export default function AdminDashboard() {
   const currentRegionData = CONSUMPTION_DATA[selectedRegion];
   const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
 
+  // helper: produce short x-axis label (roman or acronym)
+  const shortRegionLabel = (r: string) => {
+    const parts = r.split('–').map((p) => p.trim());
+    const left = parts[0]; // e.g. "Region I" or "NCR" or "MIMAROPA"
+    if (/^Region\b/i.test(left)) {
+      return left.replace(/^Region\s*/i, '').trim(); // "I", "II", "IV-A", "XII", etc.
+    }
+    return left; // "NCR", "CAR", "MIMAROPA", "BARMM", "NIR"
+  };
+
   // Time series data for selected region
   const timeSeriesData = {
     labels: monthLabels,
@@ -70,10 +80,7 @@ export default function AdminDashboard() {
 
   // Bar chart: all 18 regions consumption for June (defensive access)
   const barChartData = {
-    labels: REGIONS.map((r) => {
-      const head = r.split('–')[0]?.trim() || r;
-      return head.length > 10 ? head.substring(0, 10) : head;
-    }),
+    labels: REGIONS.map((r) => shortRegionLabel(r)),
     datasets: [
       {
         data: REGIONS.map((r) => CONSUMPTION_DATA[r]?.months?.[5] ?? 0),
@@ -81,38 +88,35 @@ export default function AdminDashboard() {
     ],
   };
 
+  // compute chart width so bars have breathing room: allocate ~60px per region
+  const perBarWidth = 60;
+  const chartWidth = Math.max(screenWidth - 40, REGIONS.length * perBarWidth);
+
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Admin Dashboard</Text>
       <Text style={styles.subtitle}>Electric Consumption Analytics</Text>
 
-      {/* Region Selector */}
+      {/* Region Selector Dropdown */}
       <View style={styles.sectionContainer}>
-        <Text style={styles.sectionTitle}>Select Region ({REGIONS.length} total)</Text>
-        <FlatList
-          data={REGIONS}
-          keyExtractor={(item) => item}
-          numColumns={2}
-          scrollEnabled={false}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={[
-                styles.regionButton,
-                selectedRegion === item && styles.regionButtonActive,
-              ]}
-              onPress={() => setSelectedRegion(item)}
-            >
-              <Text
-                style={[
-                  styles.regionButtonText,
-                  selectedRegion === item && styles.regionButtonTextActive,
-                ]}
-              >
-                {item.split('–')[1]?.trim() || item}
-              </Text>
-            </TouchableOpacity>
-          )}
-        />
+        <Text style={styles.sectionTitle}>Select Region</Text>
+        <View style={styles.pickerContainer}>
+          <Picker
+            selectedValue={selectedRegion}
+            onValueChange={(itemValue) => setSelectedRegion(itemValue)}
+            style={styles.picker}
+            itemStyle={styles.pickerItem}
+            mode='dropdown'
+          >
+            {REGIONS.map((region) => (
+              <Picker.Item
+                key={region}
+                label={region.split('–')[1]?.trim() || region}
+                value={region}
+              />
+            ))}
+          </Picker>
+        </View>
       </View>
 
       {/* Time Series Chart */}
@@ -128,7 +132,7 @@ export default function AdminDashboard() {
             backgroundColor: '#fff',
             backgroundGradientFrom: '#fff',
             backgroundGradientTo: '#fff',
-            color: () => '#4CAF50',
+            color: (opacity = 1) => `rgba(76,175,80, ${opacity})`,
             strokeWidth: 2,
             useShadowColorFromDataset: false,
             decimalPlaces: 0,
@@ -144,15 +148,18 @@ export default function AdminDashboard() {
         <ScrollView horizontal showsHorizontalScrollIndicator>
           <BarChart
             data={barChartData}
-            width={screenWidth * 1.5}
-            height={250}
-            yAxisLabel=""              // added
-            yAxisSuffix=" kWh"         // added
+            width={chartWidth}
+            height={280}
+            yAxisLabel=""
+            yAxisSuffix=" kWh"
+            fromZero
+            showValuesOnTopOfBars
+            verticalLabelRotation={0}
             chartConfig={{
               backgroundColor: '#fff',
               backgroundGradientFrom: '#fff',
               backgroundGradientTo: '#fff',
-              color: () => '#2196F3',
+              color: (opacity = 1) => `rgba(33,150,243, ${opacity})`,
               strokeWidth: 2,
               useShadowColorFromDataset: false,
               decimalPlaces: 0,
@@ -173,24 +180,18 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 14, color: '#666', marginBottom: 20 },
   sectionContainer: { marginBottom: 30, backgroundColor: '#fff', padding: 15, borderRadius: 8 },
   sectionTitle: { fontSize: 16, fontWeight: '600', marginBottom: 15, color: '#333' },
-  chart: { marginVertical: 10, borderRadius: 8 },
-  regionButton: {
-    flex: 1,
-    margin: 6,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    backgroundColor: '#f0f0f0',
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: '#ddd',
     borderRadius: 6,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
+    overflow: 'hidden',
   },
-  regionButtonActive: {
-    backgroundColor: '#4CAF50',
-    borderColor: '#2E7D32',
+  picker: {
+    height: 60,
+    backgroundColor: '#fff',
+    paddingVertical:6,
   },
-  regionButtonText: { fontSize: 11, fontWeight: '600', color: '#333', textAlign: 'center' },
-  regionButtonTextActive: { color: '#fff' },
+  pickerItem: { height: 60, fontSize: 16 },
+  chart: { marginVertical: 10, borderRadius: 8 },
   footer: { fontSize: 14, color: '#999', marginTop: 20, marginBottom: 30, textAlign: 'center' },
 });
-// ...existing code...
