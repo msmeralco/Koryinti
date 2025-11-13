@@ -275,7 +275,7 @@ export default function AddVehicleScreen({ navigation }: Props) {
   );
 }
 
-const GREEN = '#78FF9F';
+const GREEN = '#00F470';
 const DARK_BG = '#05060A';
 const CARD_BG = '#151620';
 const BORDER_DARK = '#262736';
