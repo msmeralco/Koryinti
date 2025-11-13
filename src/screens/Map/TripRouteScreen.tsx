@@ -1,3 +1,4 @@
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -6,57 +7,112 @@ import {
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { MapStackParamList, Route } from '@/types/navigation';
-import { useState, useEffect } from 'react';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
-import { calculateRoute } from '@/services/routeService';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { MapStackParamList, EnrichedStation } from '@/types/navigation';
+import { calculateDetailedRoute } from '@/services/routeCalculationEngine';
+import { DetailedRoute, RouteSegment } from '@/types/route-calculation';
 
 type Props = NativeStackScreenProps<MapStackParamList, 'TripRoute'>;
 
-/**
- * TripRouteScreen displays the suggested route with recommended
- * charging stops. Users can view the full route details and proceed
- * to reserve chargers at the suggested stations.
- */
 export default function TripRouteScreen({ navigation, route }: Props) {
-  const { from, to } = route.params;
-  const [calculatedRoute, setCalculatedRoute] = useState<Route | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { from, to, currentBatteryPercent = 80 } = route.params;
 
-  // Map region centered on Manila
-  const [region] = useState({
-    latitude: 14.5995,
-    longitude: 120.9842,
-    latitudeDelta: 0.2,
-    longitudeDelta: 0.2,
-  });
+  const [detailedRoute, setDetailedRoute] = useState<DetailedRoute | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Compute an initial region once route is available
+  const region = useMemo(() => {
+    if (!detailedRoute || detailedRoute.segments.length < 2) {
+      return {
+        latitude: 14.5995,
+        longitude: 120.9842,
+        latitudeDelta: 0.5,
+        longitudeDelta: 0.5,
+      };
+    }
+    const first = detailedRoute.segments[0].coordinates;
+    const last = detailedRoute.segments[detailedRoute.segments.length - 1].coordinates;
+    const midLat = (first.latitude + last.latitude) / 2;
+    const midLon = (first.longitude + last.longitude) / 2;
+    const latDelta = Math.max(Math.abs(first.latitude - last.latitude) * 1.5, 0.3);
+    const lonDelta = Math.max(Math.abs(first.longitude - last.longitude) * 1.5, 0.3);
+    return {
+      latitude: midLat,
+      longitude: midLon,
+      latitudeDelta: latDelta,
+      longitudeDelta: lonDelta,
+    };
+  }, [detailedRoute]);
 
   useEffect(() => {
-    // Calculate route when component mounts
-    const fetchRoute = async () => {
+    let mounted = true;
+    const run = async () => {
       setLoading(true);
+      setError(null);
       try {
-        const result = await calculateRoute({ from, to });
-        setCalculatedRoute(result);
-      } catch (error) {
-        console.error('Error calculating route:', error);
+        const result = await calculateDetailedRoute({
+          from,
+          to,
+          currentBatteryPercent,
+          preferFastChargers: true,
+          maxDetourKm: 5,
+        });
+        if (mounted) {
+          if (result.success && result.route) {
+            setDetailedRoute(result.route);
+          } else {
+            setError(result.error || 'Failed to calculate route');
+          }
+        }
+      } catch {
+        if (mounted) {
+          setError('An unexpected error occurred while calculating the route');
+        }
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
-
-    fetchRoute();
-  }, [from, to]);
+    run();
+    return () => {
+      mounted = false;
+    };
+  }, [from, to, currentBatteryPercent]);
 
   const handleReserveChargers = () => {
-    if (calculatedRoute) {
-      const stationIds = calculatedRoute.suggestedStations.map(s => s.id);
-      navigation.navigate('ReservationDetails', {
-        routeId: calculatedRoute.id,
-        stations: stationIds,
-      });
-    }
+    if (!detailedRoute || detailedRoute.chargingStops.length === 0) return;
+    const enrichedStations: EnrichedStation[] = detailedRoute.chargingStops.map(stop => ({
+      id: stop.station.id,
+      title: stop.station.name,
+      address: stop.station.address,
+      latitude: stop.station.latitude,
+      longitude: stop.station.longitude,
+      totalPlugs: stop.station.totalChargers,
+      plugsInUse: stop.station.totalChargers - stop.station.availableChargers,
+      availablePlugs: stop.station.availableChargers,
+      plugTypes: stop.station.amenities,
+      powerKW: stop.station.powerKW || 50,
+      distanceKm: stop.distanceFromStart,
+      driveMinutes: 0,
+      rating: stop.station.rating,
+      pricePerKWh: stop.station.pricePerKwh,
+      amenities: {
+        wifi: stop.station.amenities.includes('WiFi'),
+        bathroom:
+          stop.station.amenities.includes('Restroom') ||
+          stop.station.amenities.includes('Bathroom'),
+        pwdFriendly: false,
+        waitingLounge: false,
+      },
+      state: '',
+    }));
+    navigation.navigate('ReservationDetails', {
+      routeId: detailedRoute.id,
+      stations: enrichedStations,
+    });
   };
 
   if (loading) {
@@ -64,14 +120,18 @@ export default function TripRouteScreen({ navigation, route }: Props) {
       <View style={[styles.container, styles.centered]}>
         <ActivityIndicator size="large" color="#4CAF50" />
         <Text style={styles.loadingText}>Calculating optimal route...</Text>
+        <Text style={styles.loadingSubtext}>Analyzing battery needs and finding chargers</Text>
       </View>
     );
   }
 
-  if (!calculatedRoute) {
+  if (error || !detailedRoute) {
     return (
       <View style={[styles.container, styles.centered]}>
-        <Text style={styles.errorText}>Unable to calculate route</Text>
+        <Text style={styles.errorText}>❌ {error || 'Unable to calculate route'}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={() => navigation.goBack()}>
+          <Text style={styles.retryButtonText}>Go Back</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -84,98 +144,238 @@ export default function TripRouteScreen({ navigation, route }: Props) {
         provider={PROVIDER_GOOGLE}
         showsUserLocation
       >
-        {/* Markers for charging stations */}
-        {calculatedRoute.suggestedStations.map(station => (
+        {/* Route polyline */}
+        <Polyline coordinates={detailedRoute.polyline} strokeColor="#4CAF50" strokeWidth={4} />
+
+        {/* Charging station markers */}
+        {detailedRoute.chargingStops.map((stop, index) => (
           <Marker
-            key={station.id}
-            coordinate={{
-              latitude: station.latitude,
-              longitude: station.longitude,
-            }}
-            title={station.name}
-            description={`${station.chargingSpeed} • ₱${station.pricePerKwh}/kWh`}
+            key={`charging-${index}`}
+            coordinate={{ latitude: stop.station.latitude, longitude: stop.station.longitude }}
+            title={stop.station.name}
+            description={`Stop ${index + 1} • ${stop.chargingDuration} min charge`}
             pinColor="#4CAF50"
           />
         ))}
 
-        {/* Mock route line (in real app, use actual route polyline from API) */}
-        {calculatedRoute.suggestedStations.length > 0 && (
-          <Polyline
-            coordinates={calculatedRoute.suggestedStations.map(s => ({
-              latitude: s.latitude,
-              longitude: s.longitude,
-            }))}
-            strokeColor="#4CAF50"
-            strokeWidth={3}
-          />
-        )}
+        {/* Start marker */}
+        <Marker
+          coordinate={detailedRoute.segments[0].coordinates}
+          title="Start"
+          description={from}
+          pinColor="#2196F3"
+        />
+
+        {/* Destination marker */}
+        <Marker
+          coordinate={detailedRoute.segments[detailedRoute.segments.length - 1].coordinates}
+          title="Destination"
+          description={to}
+          pinColor="#F44336"
+        />
       </MapView>
 
       <View style={styles.bottomSheet}>
         <View style={styles.handle} />
-
-        <ScrollView style={styles.content}>
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           <Text style={styles.title}>Suggested Route</Text>
           <Text style={styles.subtitle}>
             {from} → {to}
           </Text>
 
-          <View style={styles.routeInfo}>
-            <View style={styles.infoItem}>
-              <Text style={styles.infoValue}>{calculatedRoute.distance} km</Text>
-              <Text style={styles.infoLabel}>Distance</Text>
+          {/* Quick Stats */}
+          <View style={styles.quickStats}>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{detailedRoute.totalDistance} km</Text>
+              <Text style={styles.statLabel}>Distance</Text>
             </View>
-            <View style={styles.infoItem}>
-              <Text style={styles.infoValue}>{calculatedRoute.estimatedTime}h</Text>
-              <Text style={styles.infoLabel}>Est. Time</Text>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>
+                {Math.floor(detailedRoute.totalDuration / 60)}h {detailedRoute.totalDuration % 60}m
+              </Text>
+              <Text style={styles.statLabel}>Total Time</Text>
             </View>
-            <View style={styles.infoItem}>
-              <Text style={styles.infoValue}>{calculatedRoute.suggestedStations.length} stops</Text>
-              <Text style={styles.infoLabel}>Charging</Text>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{detailedRoute.chargingStops.length}</Text>
+              <Text style={styles.statLabel}>Charging Stops</Text>
             </View>
           </View>
 
-          {calculatedRoute.suggestedStations.length > 0 ? (
+          {/* Route Details */}
+          <Text style={styles.sectionTitle}>Route Details</Text>
+          {detailedRoute.segments.map(segment => (
+            <RouteSegmentCard key={segment.id} segment={segment} />
+          ))}
+
+          {/* Cost Summary */}
+          {detailedRoute.chargingStops.length > 0 && (
             <>
-              <Text style={styles.sectionTitle}>Recommended Charging Stops</Text>
-              {calculatedRoute.suggestedStations.map((station, index) => (
-                <TouchableOpacity
-                  key={station.id}
-                  style={styles.stationCard}
-                  onPress={() => navigation.navigate('StationProfile', { stationId: station.id })}
-                >
-                  <View style={styles.stationNumber}>
-                    <Text style={styles.stationNumberText}>{index + 1}</Text>
-                  </View>
-                  <View style={styles.stationInfo}>
-                    <Text style={styles.stationName}>{station.name}</Text>
-                    <Text style={styles.stationDetail}>{station.address}</Text>
-                    <Text style={styles.stationDetail}>
-                      {station.chargingSpeed} • ₱{station.pricePerKwh}/kWh • ⭐ {station.rating}
-                    </Text>
-                    <Text style={styles.stationAvailability}>
-                      {station.availableChargers}/{station.totalChargers} available
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
+              <View style={styles.divider} />
+              <Text style={styles.sectionTitle}>Cost Summary</Text>
+              <View style={styles.costSummary}>
+                <View style={styles.costRow}>
+                  <Text style={styles.costLabel}>Total Distance</Text>
+                  <Text style={styles.costValue}>{detailedRoute.totalDistance} km</Text>
+                </View>
+                <View style={styles.costRow}>
+                  <Text style={styles.costLabel}>Total Travel Time</Text>
+                  <Text style={styles.costValue}>
+                    {Math.floor(detailedRoute.totalTravelTime / 60)}h{' '}
+                    {detailedRoute.totalTravelTime % 60}m
+                  </Text>
+                </View>
+                <View style={styles.costRow}>
+                  <Text style={styles.costLabel}>Charging Time</Text>
+                  <Text style={styles.costValue}>{detailedRoute.totalChargingTime} min</Text>
+                </View>
+                <View style={styles.dividerThin} />
+                <View style={styles.costRow}>
+                  <Text style={styles.costLabel}>Charging Cost</Text>
+                  <Text style={styles.costValue}>
+                    ₱{detailedRoute.costBreakdown.chargingCost.toFixed(2)}
+                  </Text>
+                </View>
+                <View style={styles.costRow}>
+                  <Text style={styles.costLabel}>Booking Fee (2%)</Text>
+                  <Text style={styles.costValue}>
+                    ₱{detailedRoute.costBreakdown.bookingFee.toFixed(2)}
+                  </Text>
+                </View>
+                <View style={styles.costRow}>
+                  <Text style={styles.costLabel}>Service Fee</Text>
+                  <Text style={styles.costValue}>
+                    ₱{detailedRoute.costBreakdown.serviceFee.toFixed(2)}
+                  </Text>
+                </View>
+                <View style={styles.dividerThin} />
+                <View style={styles.costRow}>
+                  <Text style={styles.costLabelBold}>Total Cost</Text>
+                  <Text style={styles.costValueBold}>
+                    ₱{detailedRoute.costBreakdown.totalCost.toFixed(2)}
+                  </Text>
+                </View>
+              </View>
 
               <TouchableOpacity style={styles.reserveButton} onPress={handleReserveChargers}>
                 <Text style={styles.reserveButtonText}>Reserve Chargers</Text>
               </TouchableOpacity>
             </>
-          ) : (
-            <View style={styles.noStopsContainer}>
-              <Text style={styles.noStopsText}>✅ No charging stops needed for this trip!</Text>
-              <Text style={styles.noStopsSubtext}>
-                Your current battery level is sufficient for this journey.
-              </Text>
+          )}
+
+          {detailedRoute.chargingStops.length === 0 && (
+            <View style={styles.noChargingNeeded}>
+              <Text style={styles.noChargingText}>✅ No charging needed!</Text>
+              <Text style={styles.noChargingSubtext}>Your battery is sufficient for this trip</Text>
             </View>
           )}
+
+          <View style={styles.bottomPadding} />
         </ScrollView>
       </View>
     </View>
   );
+}
+
+function RouteSegmentCard({ segment }: { segment: RouteSegment }) {
+  if (segment.type === 'start') {
+    return (
+      <View style={styles.segmentCard}>
+        <View style={styles.segmentHeader}>
+          <View style={styles.segmentIconStart}>
+            <Text style={styles.segmentIconText}>🚗</Text>
+          </View>
+          <View style={styles.segmentInfo}>
+            <Text style={styles.segmentTitle}>{segment.location}</Text>
+            <Text style={styles.segmentSubtitle}>Starting point</Text>
+          </View>
+          <Text style={styles.batteryText}>{segment.batteryAtArrival.toFixed(0)}%</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (segment.type === 'travel') {
+    return (
+      <View style={styles.segmentCard}>
+        <View style={styles.segmentHeader}>
+          <View style={styles.segmentIconTravel}>
+            <Text style={styles.segmentIconText}>→</Text>
+          </View>
+          <View style={styles.segmentInfo}>
+            <Text style={styles.segmentTitle}>Traveling to next point</Text>
+            <Text style={styles.segmentSubtitle}>
+              {segment.distanceFromPrevious.toFixed(1)} km •{' '}
+              {Math.floor(segment.durationFromPrevious / 60)}h{' '}
+              {Math.round(segment.durationFromPrevious % 60)}m
+            </Text>
+          </View>
+          <Text style={styles.batteryText}>{segment.batteryAtArrival.toFixed(0)}%</Text>
+        </View>
+
+        {segment.instructions && segment.instructions.length > 0 && (
+          <View style={styles.instructionsContainer}>
+            <Text style={styles.instructionsTitle}>Route Instructions:</Text>
+            {segment.instructions.slice(0, 3).map((instruction, idx) => (
+              <Text key={idx} style={styles.instructionText}>
+                • {instruction.instruction}
+              </Text>
+            ))}
+            {segment.instructions.length > 3 && (
+              <Text style={styles.instructionText}>
+                ... and {segment.instructions.length - 3} more steps
+              </Text>
+            )}
+          </View>
+        )}
+      </View>
+    );
+  }
+
+  if (segment.type === 'charging_station') {
+    return (
+      <View style={styles.segmentCardCharging}>
+        <View style={styles.segmentHeader}>
+          <View style={styles.segmentIconCharging}>
+            <Text style={styles.segmentIconText}>🔋</Text>
+          </View>
+          <View style={styles.segmentInfo}>
+            <Text style={styles.segmentTitleCharging}>{segment.location}</Text>
+            <Text style={styles.segmentSubtitle}>
+              Charge for {segment.chargingDuration} minutes
+            </Text>
+            <Text style={styles.chargingCost}>
+              Cost: ₱{segment.chargingCost?.toFixed(2)}{' '}
+              {segment.energyCharged ? `(${segment.energyCharged.toFixed(1)} kWh)` : ''}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.batteryChange}>
+          <Text style={styles.batteryText}>{segment.batteryAtArrival.toFixed(0)}%</Text>
+          <Text style={styles.batteryArrow}>↓</Text>
+          <Text style={styles.batteryTextGreen}>{segment.batteryAtDeparture?.toFixed(0)}%</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (segment.type === 'destination') {
+    return (
+      <View style={styles.segmentCard}>
+        <View style={styles.segmentHeader}>
+          <View style={styles.segmentIconDestination}>
+            <Text style={styles.segmentIconText}>🏁</Text>
+          </View>
+          <View style={styles.segmentInfo}>
+            <Text style={styles.segmentTitle}>{segment.location}</Text>
+            <Text style={styles.segmentSubtitle}>Destination</Text>
+          </View>
+          <Text style={styles.batteryText}>{segment.batteryAtArrival.toFixed(0)}%</Text>
+        </View>
+      </View>
+    );
+  }
+
+  return null;
 }
 
 const styles = StyleSheet.create({
@@ -186,21 +386,41 @@ const styles = StyleSheet.create({
   centered: {
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 20,
   },
   loadingText: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: 18,
+    color: '#333',
     marginTop: 15,
+    fontWeight: '600',
+  },
+  loadingSubtext: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 8,
   },
   errorText: {
     fontSize: 16,
     color: '#f44336',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 30,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   map: {
     flex: 1,
   },
   bottomSheet: {
-    maxHeight: '60%',
+    maxHeight: '65%',
     backgroundColor: '#fff',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
@@ -232,104 +452,225 @@ const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 15,
   },
-  routeInfo: {
+  quickStats: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    backgroundColor: '#f9f9f9',
+    borderRadius: 12,
     marginBottom: 20,
   },
-  infoItem: {
+  statItem: {
     alignItems: 'center',
   },
-  infoValue: {
-    fontSize: 20,
+  statValue: {
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#4CAF50',
   },
-  infoLabel: {
-    fontSize: 14,
+  statLabel: {
+    fontSize: 12,
     color: '#666',
-    marginTop: 5,
+    marginTop: 4,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#333',
-    marginBottom: 15,
+    marginTop: 10,
+    marginBottom: 12,
   },
-  stationCard: {
-    flexDirection: 'row',
+  segmentCard: {
     backgroundColor: '#f9f9f9',
+    borderRadius: 12,
     padding: 15,
-    borderRadius: 8,
     marginBottom: 10,
-    alignItems: 'center',
   },
-  stationNumber: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+  segmentCardCharging: {
+    backgroundColor: '#E8F5E9',
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 10,
+    borderWidth: 2,
+    borderColor: '#4CAF50',
+  },
+  segmentHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  segmentIconStart: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#2196F3',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  segmentIconTravel: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FF9800',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  segmentIconCharging: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: '#4CAF50',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
-  stationNumberText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 14,
+  segmentIconDestination: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F44336',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
-  stationInfo: {
+  segmentIconText: {
+    fontSize: 20,
+  },
+  segmentInfo: {
     flex: 1,
   },
-  stationName: {
+  segmentTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
-    marginBottom: 5,
+    marginBottom: 4,
   },
-  stationDetail: {
+  segmentTitleCharging: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#2E7D32',
+    marginBottom: 4,
+  },
+  segmentSubtitle: {
     fontSize: 13,
     color: '#666',
-    marginBottom: 3,
+    marginBottom: 2,
   },
-  stationAvailability: {
+  chargingCost: {
     fontSize: 13,
     color: '#4CAF50',
     fontWeight: '600',
-    marginTop: 3,
+    marginTop: 2,
+  },
+  batteryText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#666',
+  },
+  batteryTextGreen: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#4CAF50',
+  },
+  batteryChange: {
+    alignItems: 'center',
+  },
+  batteryArrow: {
+    fontSize: 12,
+    color: '#999',
+    marginVertical: 2,
+  },
+  instructionsContainer: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+  },
+  instructionsTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#666',
+    marginBottom: 6,
+  },
+  instructionText: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 3,
+    paddingLeft: 5,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#e0e0e0',
+    marginVertical: 20,
+  },
+  dividerThin: {
+    height: 1,
+    backgroundColor: '#f0f0f0',
+    marginVertical: 8,
+  },
+  costSummary: {
+    backgroundColor: '#f9f9f9',
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 15,
+  },
+  costRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginVertical: 5,
+  },
+  costLabel: {
+    fontSize: 14,
+    color: '#666',
+  },
+  costValue: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '500',
+  },
+  costLabelBold: {
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '700',
+  },
+  costValueBold: {
+    fontSize: 16,
+    color: '#4CAF50',
+    fontWeight: '700',
   },
   reserveButton: {
     backgroundColor: '#4CAF50',
-    paddingVertical: 15,
-    borderRadius: 8,
-    marginTop: 20,
-    marginBottom: 20,
+    paddingVertical: 16,
+    borderRadius: 12,
+    marginTop: 10,
+    marginBottom: 15,
   },
   reserveButtonText: {
     color: '#fff',
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '700',
     textAlign: 'center',
   },
-  noStopsContainer: {
+  noChargingNeeded: {
     backgroundColor: '#E8F5E9',
     padding: 20,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: 'center',
+    marginTop: 10,
   },
-  noStopsText: {
+  noChargingText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#4CAF50',
+    fontWeight: '700',
+    color: '#2E7D32',
     marginBottom: 8,
-    textAlign: 'center',
   },
-  noStopsSubtext: {
+  noChargingSubtext: {
     fontSize: 14,
     color: '#666',
     textAlign: 'center',
+  },
+  bottomPadding: {
+    height: 30,
   },
 });

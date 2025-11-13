@@ -1,37 +1,57 @@
 import React, { useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Animated,
-  Dimensions,
-} from 'react-native';
-import {
-  createBottomTabNavigator,
-  BottomTabBarProps,
-} from '@react-navigation/bottom-tabs';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions } from 'react-native';
+import { createBottomTabNavigator, BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { MainTabsParamList } from '@/types/navigation';
 
 import MapNavigator from './MapNavigator';
 import ProfileScreen from '@/screens/Profile/ProfileScreen';
 import ReservationsScreen from '@/screens/Reservations/ReservationsScreen';
 
-import {
-  Ionicons,
-  Feather,
-  MaterialCommunityIcons,
-} from '@expo/vector-icons';
+import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 
 const Tab = createBottomTabNavigator<MainTabsParamList>();
+/**
+ * MainTabsNavigator provides the primary bottom tab navigation
+ * for the main sections of the app after user registration/login
+ */
+
+const TAB_BAR_BG = '#050608';
+const ACTIVE_PILL = '#4CAF50';
+const ACTIVE_TEXT = '#FFFFFF';
+const INACTIVE_ICON = 'rgba(255,255,255,0.8)';
+
+function TabItem({
+  focused,
+  label,
+  IconComponent,
+  iconName,
+}: {
+  focused: boolean;
+  label: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  IconComponent: any;
+  iconName: string;
+}) {
+  if (focused) {
+    return (
+      <View style={styles.tabWrapper}>
+        <View style={styles.pill}>
+          <IconComponent name={iconName} size={22} color={ACTIVE_TEXT} />
+          <Text style={styles.pillLabel}>{label}</Text>
+        </View>
+      </View>
+    );
+  }
+  return (
+    <View style={styles.tabWrapper}>
+      <IconComponent name={iconName} size={22} color={INACTIVE_ICON} />
+    </View>
+  );
+}
 
 // ---------- helpers ----------
 const getLabel = (name: string) =>
-  name === 'Map'
-    ? 'Home'
-    : name === 'Reservations'
-    ? 'Sessions'
-    : 'Profile';
+  name === 'Map' ? 'Home' : name === 'Reservations' ? 'Sessions' : 'Profile';
 
 // pill width based on icon + label + symmetric padding
 const getPillWidthForRoute = (routeName: string, tabWidth: number) => {
@@ -40,7 +60,7 @@ const getPillWidthForRoute = (routeName: string, tabWidth: number) => {
 
   const iconWidth = 24;
   const labelMargin = 8;
-  const perChar = 11;    // approximate char width
+  const perChar = 11; // approximate char width
   const sidePadding = 16;
 
   const contentWidth = iconWidth + labelMargin + perChar * charCount;
@@ -54,13 +74,7 @@ const getIcon = (name: string, color: string, size: number) => {
     case 'Map':
       return <Ionicons name="home-outline" size={size} color={color} />;
     case 'Reservations':
-      return (
-        <MaterialCommunityIcons
-          name="clipboard-text-outline"
-          size={size}
-          color={color}
-        />
-      );
+      return <MaterialCommunityIcons name="clipboard-text-outline" size={size} color={color} />;
     case 'Profile':
       return <Feather name="user" size={size} color={color} />;
     default:
@@ -79,9 +93,7 @@ function AnimatedTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
 
   const animatedIndex = useRef(new Animated.Value(state.index)).current;
   const animatedWidth = useRef(
-    new Animated.Value(
-      getPillWidthForRoute(state.routes[state.index].name, tabWidth),
-    ),
+    new Animated.Value(getPillWidthForRoute(state.routes[state.index].name, tabWidth))
   ).current;
 
   useEffect(() => {
@@ -107,11 +119,11 @@ function AnimatedTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   // pill horizontal movement
   const centerTranslateX = Animated.add(
     Animated.multiply(animatedIndex, new Animated.Value(tabWidth)),
-    new Animated.Value(tabWidth / 2),
+    new Animated.Value(tabWidth / 2)
   );
   const pillTranslateX = Animated.subtract(
     centerTranslateX,
-    Animated.divide(animatedWidth, new Animated.Value(2)),
+    Animated.divide(animatedWidth, new Animated.Value(2))
   );
 
   return (
@@ -166,7 +178,9 @@ function AnimatedTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
           });
         };
 
-        const color = '#FFFFFF';
+        // white when idle, black when selected
+        const iconColor = isFocused ? '#000000' : '#FFFFFF';
+        const labelColor = isFocused ? '#000000' : '#FFFFFF';
 
         return (
           <TouchableOpacity
@@ -174,23 +188,23 @@ function AnimatedTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
             accessibilityRole="button"
             accessibilityState={isFocused ? { selected: true } : {}}
             accessibilityLabel={options.tabBarAccessibilityLabel}
-            testID={options.tabBarTestID}
             onPress={onPress}
             onLongPress={onLongPress}
             style={[styles.tabItem, { width: tabWidth, height: barHeight }]}
             activeOpacity={0.8}
           >
             <View style={styles.tabContent}>
-              {/* icon – fixed vertical position */}
-              {getIcon(route.name, color, 22)}
+              {/* icon – color depends on focus */}
+              {getIcon(route.name, iconColor, 22)}
 
-              {/* label – only render for active tab, so icons of others stay perfectly centered */}
+              {/* label – only render for active tab */}
               {isFocused && (
                 <Animated.Text
                   numberOfLines={1}
                   style={[
                     styles.label,
                     {
+                      color: labelColor,
                       marginLeft: 8,
                       opacity: labelOpacity,
                       transform: [{ scale: labelScale }],
@@ -213,11 +227,50 @@ export default function MainTabsNavigator() {
   return (
     <Tab.Navigator
       screenOptions={{ headerShown: false }}
-      tabBar={(props) => <AnimatedTabBar {...props} />}
+      tabBar={props => <AnimatedTabBar {...props} />}
     >
-      <Tab.Screen name="Map" component={MapNavigator} />
-      <Tab.Screen name="Reservations" component={ReservationsScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      {/* HOME (MapNavigator) */}
+      <Tab.Screen
+        name="Map"
+        component={MapNavigator}
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <TabItem
+              focused={focused}
+              label="Home"
+              IconComponent={Ionicons}
+              iconName="home-outline"
+            />
+          ),
+        }}
+      />
+
+      {/* SESSIONS (ReservationsScreen) */}
+      <Tab.Screen
+        name="Reservations"
+        component={ReservationsScreen}
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <TabItem
+              focused={focused}
+              label="Sessions"
+              IconComponent={MaterialCommunityIcons}
+              iconName="clipboard-text-outline"
+            />
+          ),
+        }}
+      />
+
+      {/* PROFILE */}
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <TabItem focused={focused} label="Profile" IconComponent={Feather} iconName="user" />
+          ),
+        }}
+      />
     </Tab.Navigator>
   );
 }
@@ -233,7 +286,7 @@ const styles = StyleSheet.create({
   pill: {
     position: 'absolute',
     borderRadius: 999,
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#00F470', // your bright green
     zIndex: 0,
   },
   tabItem: {
@@ -243,12 +296,20 @@ const styles = StyleSheet.create({
   },
   tabContent: {
     flexDirection: 'row',
-    alignItems: 'center',   // vertical centering inside pill
+    alignItems: 'center', // vertical centering inside pill
     justifyContent: 'center', // horizontal centering
   },
   label: {
-    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
+  },
+  tabWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pillLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
 });

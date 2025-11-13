@@ -27,7 +27,7 @@ export async function searchPlaces(query: string): Promise<GeocodingResult[]> {
 
   try {
     // Nominatim API endpoint
-    // countrycodes=ph biases results to Philippines
+    // countrycodes=ph biases results to Philippinses
     const url =
       `https://nominatim.openstreetmap.org/search?` +
       `q=${encodeURIComponent(query)}` +

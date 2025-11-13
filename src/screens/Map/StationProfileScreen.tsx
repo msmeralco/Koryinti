@@ -37,7 +37,9 @@ export default function StationProfileScreen({ navigation, route }: Props) {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Availability</Text>
-        <Text style={[styles.availability, isFull && {color:'#d32f2f'}]}>{station.availablePlugs} of {station.totalPlugs} chargers available</Text>
+        <Text style={[styles.availability, isFull && { color: '#d32f2f' }]}>
+          {station.availablePlugs} of {station.totalPlugs} chargers available
+        </Text>
         <Text style={styles.text}>In use: {station.plugsInUse}</Text>
       </View>
 
@@ -45,7 +47,10 @@ export default function StationProfileScreen({ navigation, route }: Props) {
         <Text style={styles.sectionTitle}>Address</Text>
         <Text style={styles.text}>{station.address}</Text>
         <Text style={styles.text}>{station.state}</Text>
-        <Text style={styles.text}>Distance: {station.distanceKm.toFixed(2)} km • {station.driveMinutes.toFixed(0)} min est. drive</Text>
+        <Text style={styles.text}>
+          Distance: {station.distanceKm.toFixed(2)} km • {station.driveMinutes.toFixed(0)} min est.
+          drive
+        </Text>
       </View>
 
       <View style={styles.section}>
@@ -71,12 +76,18 @@ export default function StationProfileScreen({ navigation, route }: Props) {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Amenities</Text>
         {amenityList.map(a => (
-          <Text key={a.key} style={styles.text}>• {a.label}: {station.amenities[a.key] ? 'Yes' : 'No'}</Text>
+          <Text key={a.key} style={styles.text}>
+            • {a.label}: {station.amenities[a.key] ? 'Yes' : 'No'}
+          </Text>
         ))}
       </View>
 
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={[styles.primaryButton, isFull && {backgroundColor:'#9e9e9e'}]} disabled={isFull} onPress={handleReserve}>
+        <TouchableOpacity
+          style={[styles.primaryButton, isFull && { backgroundColor: '#9e9e9e' }]}
+          disabled={isFull}
+          onPress={handleReserve}
+        >
           <Text style={styles.buttonText}>{isFull ? 'Full / Unavailable' : 'Reserve'}</Text>
         </TouchableOpacity>
         {/* Removed Directions and Plan a Trip actions per new UX spec */}
