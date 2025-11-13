@@ -1,0 +1,35 @@
+{
+  "variant": "dark",
+  "styles": [
+    {
+      "id": "infrastructure.roadNetwork",
+      "geometry": {
+        "fillOpacity": 1,
+        "fillColor": "#46f98c",
+        "strokeOpacity": 1,
+        "strokeColor": "#ffffff"
+      }
+    },
+    {
+      "id": "infrastructure.urbanArea",
+      "geometry": {
+        "fillOpacity": 1,
+        "fillColor": "#1f2321"
+      }
+    },
+    {
+      "id": "natural.land",
+      "geometry": {
+        "fillOpacity": 1,
+        "fillColor": "#111312"
+      }
+    },
+    {
+      "id": "natural.water",
+      "geometry": {
+        "fillOpacity": 1,
+        "fillColor": "#2c3035"
+      }
+    }
+  ]
+}
