@@ -5,7 +5,8 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { getReservations, ReservationSession } from '@/services/reservationsStore';
 
-const CarImage = require('../../../assets/carimage.png');
+// Use a stock image (electric car charging) from Unsplash CDN instead of generated/AI image
+const CarImageUri = 'https://images.unsplash.com/photo-1542362567-b07e54358753?auto=format&fit=crop&w=1200&q=80';
 
 // Dynamic reservations retrieved from store (first item may be active)
 
@@ -45,8 +46,8 @@ export default function ReservationsScreen() {
 
     return (
       <TouchableOpacity style={styles.sessionCard} activeOpacity={0.9}>
-        {/* Big image on top */}
-        <Image source={CarImage} style={styles.thumbnail} />
+  {/* Big image on top */}
+  <Image source={{ uri: CarImageUri }} style={styles.thumbnail} />
 
         {/* Text content */}
         <View style={styles.sessionContent}>
@@ -101,7 +102,8 @@ export default function ReservationsScreen() {
     <SafeAreaView style={styles.container} edges={['top','left','right']}>
       <FlatList
         data={reservations}
-        keyExtractor={(item) => item.id}
+        // Some reservations may have colliding IDs from legacy/mock data; include index to guarantee uniqueness
+        keyExtractor={(item, index) => `${item.id}-${index}`}
         renderItem={renderReservation}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}

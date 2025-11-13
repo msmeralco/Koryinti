@@ -34,6 +34,7 @@ export default function PlanTripScreen({ navigation }: Props) {
   const [gettingLocation, setGettingLocation] = useState(false);
   const [nearbyStations, setNearbyStations] = useState<Station[]>([]);
   const [isFormCollapsed, setIsFormCollapsed] = useState(false);
+  const [stationsLoading, setStationsLoading] = useState(false);
 
   // Departure time selection
   const [departureTime, setDepartureTime] = useState<'now' | 'custom'>('now');
@@ -52,10 +53,13 @@ export default function PlanTripScreen({ navigation }: Props) {
   useEffect(() => {
     const loadStations = async () => {
       try {
+        setStationsLoading(true);
         const stations = await getNearbyChargingStations(region.latitude, region.longitude, 20);
         setNearbyStations(stations);
       } catch (error) {
         console.error('Error loading nearby stations:', error);
+      } finally {
+        setStationsLoading(false);
       }
     };
     loadStations();
@@ -331,20 +335,29 @@ export default function PlanTripScreen({ navigation }: Props) {
             {/* Handle bar to match bottom sheet styling */}
             <View style={styles.handleBar} />
 
-            {/* Back button for Plan a Trip */}
-            <TouchableOpacity style={styles.planBack} onPress={() => navigation.goBack()}>
+            {/* Controls row: Back arrow + Show/Hide Trip Details toggle */}
+            <View style={styles.planControls}>
               <BackArrow onPress={() => navigation.goBack()} />
-            </TouchableOpacity>
 
-            {/* Toggle button */}
-            <TouchableOpacity
-              style={styles.toggleButton}
-              onPress={() => setIsFormCollapsed(!isFormCollapsed)}
-            >
-              <Text style={styles.toggleButtonText}>
-                {isFormCollapsed ? '▲ Show Trip Details' : '▼ Hide to View Map'}
-              </Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.toggleButton}
+                onPress={() => setIsFormCollapsed(!isFormCollapsed)}
+              >
+                <Text style={styles.toggleButtonText}>
+                  {isFormCollapsed ? '▲ Show Trip Details' : '▼ Hide to View Map'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Loading overlay when fetching stations */}
+            {stationsLoading && (
+              <View style={styles.mapLoadingOverlay} pointerEvents="none">
+                <View style={styles.mapLoadingCard}>
+                  <ActivityIndicator size="large" color="#00F470" />
+                  <Text style={styles.mapLoadingText}>Loading nearby stations…</Text>
+                </View>
+              </View>
+            )}
 
             {!isFormCollapsed && (
               <>
@@ -661,6 +674,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#1F2933',
     marginBottom: 16,
   },
+  planControls: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -685,6 +705,27 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#00F470',
+  },
+
+  mapLoadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 999,
+  },
+  mapLoadingCard: {
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: 'rgba(5,8,22,0.85)',
+    alignItems: 'center',
+  },
+  mapLoadingText: {
+    color: '#E5E7EB',
+    marginTop: 8,
   },
   title: {
     fontSize: 20,

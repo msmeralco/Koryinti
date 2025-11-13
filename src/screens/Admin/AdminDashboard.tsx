@@ -89,11 +89,18 @@ export default function AdminDashboard() {
   const currentRegionMonths = getRegionMonths(selectedRegion);
   const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
 
+  // Predicted July point (simple heuristic: +5% over June)
+  const lastMonth = currentRegionMonths[currentRegionMonths.length - 1] ?? 0;
+  const predictedJuly = Math.round(lastMonth * 1.05);
+
+  const labelsWithJul = [...monthLabels, 'Jul (pred)'];
+  const dataWithPrediction = [...currentRegionMonths, predictedJuly];
+
   const timeSeriesData = {
-    labels: monthLabels,
+    labels: labelsWithJul,
     datasets: [
       {
-        data: currentRegionMonths,
+        data: dataWithPrediction,
         strokeWidth: 2,
         color: () => ACCENT_GREEN,
       },
@@ -208,6 +215,11 @@ export default function AdminDashboard() {
               bezier
               style={styles.chart}
             />
+            {/* Prediction legend: make it clear July is a forecast */}
+            <View style={styles.predictionRow}>
+              <View style={styles.predictionMarker} />
+              <Text style={styles.predictionText}>Jul (predicted): {predictedJuly.toLocaleString()} kWh</Text>
+            </View>
           </ScrollView>
         </View>
 
@@ -426,6 +438,24 @@ const styles = StyleSheet.create({
   chart: {
     marginVertical: 10,
     borderRadius: 16,
+  },
+
+  predictionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  predictionMarker: {
+    width: 36,
+    height: 2,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    borderColor: 'rgba(0,244,112,0.9)',
+    marginRight: 8,
+  },
+  predictionText: {
+    color: '#9CA3AF',
+    fontSize: 12,
   },
 
   footer: {
