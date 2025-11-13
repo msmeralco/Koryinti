@@ -20,6 +20,7 @@ import { searchPlaces, formatDisplayName, GeocodingResult } from '@/services/geo
 import * as Location from 'expo-location';
 import { getNearbyChargingStations } from '@/services/routeService';
 import { Station } from '@/types/navigation';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 type Props = NativeStackScreenProps<MapStackParamList, 'PlanTrip'>;
 
@@ -181,102 +182,83 @@ export default function PlanTripScreen({ navigation }: Props) {
               }}
               title={station.name}
               description={`${station.chargingSpeed} • ${station.availableChargers}/${station.totalChargers} available`}
-              pinColor="#4CAF50"
+              pinColor="#00F470"
             />
           ))}
         </MapView>
 
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
         >
-          <View style={[styles.inputContainer, isFormCollapsed && styles.inputContainerCollapsed]}>
-            {/* Collapse/Expand Toggle Button */}
-            <TouchableOpacity
-              style={styles.toggleButton}
-              onPress={() => setIsFormCollapsed(!isFormCollapsed)}
-            >
-              <Text style={styles.toggleButtonText}>
-                {isFormCollapsed ? '▲ Show Trip Details' : '▼ Hide to View Map'}
-              </Text>
-            </TouchableOpacity>
+          <View style={styles.inputContainer}>
+            {/* Handle bar to match bottom sheet styling */}
+            <View style={styles.handleBar} />
 
-            {!isFormCollapsed && (
-              <>
-                <Text style={styles.title}>Plan Your Trip</Text>
+            <View style={styles.headerRow}>
+              <View>
+                <Text style={styles.title}>Plan your EV trip</Text>
+                <Text style={styles.subtitle}>
+                  Set your route and find chargers along the way.
+                </Text>
+              </View>
+              <View style={styles.titleIconWrapper}>
+                <Ionicons name="trail-sign-outline" size={24} color="#00F470" />
+              </View>
+            </View>
 
-                <View style={styles.inputWrapper}>
-                  <View style={styles.labelRow}>
-                    <Text style={styles.inputLabel}>From</Text>
-                    <TouchableOpacity
-                      style={styles.locationButton}
-                      onPress={() => getCurrentLocation('from')}
-                      disabled={gettingLocation}
-                    >
-                      <Text style={styles.locationButtonText}>
-                        {gettingLocation ? '📍 Getting...' : '📍 Current Location'}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Search: SM Mall of Asia, Makati, etc."
-                    value={from}
-                    onChangeText={text => {
-                      setFrom(text);
-                      setActiveField('from');
-                    }}
-                    onFocus={() => setActiveField('from')}
-                  />
-                  {searchingFrom && (
-                    <View style={styles.loadingContainer}>
-                      <ActivityIndicator size="small" color="#4CAF50" />
-                    </View>
-                  )}
-                  {fromSuggestions.length > 0 && activeField === 'from' && (
-                    <View style={styles.suggestionsContainer}>
-                      <FlatList
-                        data={fromSuggestions}
-                        keyExtractor={item => item.place_id.toString()}
-                        keyboardShouldPersistTaps="handled"
-                        renderItem={({ item }) => (
-                          <TouchableOpacity
-                            style={styles.suggestionItem}
-                            onPress={() => selectFromSuggestion(item)}
-                          >
-                            <Text style={styles.suggestionText}>
-                              📍 {formatDisplayName(item.display_name)}
-                            </Text>
-                          </TouchableOpacity>
-                        )}
-                        style={styles.suggestionsList}
-                      />
-                    </View>
-                  )}
+            {/* FROM */}
+            <View style={styles.inputWrapper}>
+              <View style={styles.labelRow}>
+                <View style={styles.labelLeft}>
+                  <Ionicons name="navigate-outline" size={16} color="#9CA3AF" />
+                  <Text style={styles.inputLabel}>From</Text>
                 </View>
-
-                <View style={styles.inputWrapper}>
-                  <View style={styles.labelRow}>
-                    <Text style={styles.inputLabel}>To</Text>
-                    <TouchableOpacity
-                      style={styles.locationButton}
-                      onPress={() => getCurrentLocation('to')}
-                      disabled={gettingLocation}
-                    >
-                      <Text style={styles.locationButtonText}>
-                        {gettingLocation ? '📍 Getting...' : '📍 Current Location'}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Search destination..."
-                    value={to}
-                    onChangeText={text => {
-                      setTo(text);
-                      setActiveField('to');
-                    }}
-                    onFocus={() => setActiveField('to')}
+                <TouchableOpacity
+                  style={styles.locationButton}
+                  onPress={() => getCurrentLocation('from')}
+                  disabled={gettingLocation}
+                >
+                  <Ionicons name="locate-outline" size={14} color="#00F470" />
+                  <Text style={styles.locationButtonText}>
+                    {gettingLocation ? 'Getting...' : 'Use current'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <TextInput
+                style={styles.input}
+                placeholder="Search: SM Mall of Asia, Makati, etc."
+                placeholderTextColor="#6B7280"
+                value={from}
+                onChangeText={text => {
+                  setFrom(text);
+                  setActiveField('from');
+                }}
+                onFocus={() => setActiveField('from')}
+              />
+              {searchingFrom && (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color="#00F470" />
+                </View>
+              )}
+              {fromSuggestions.length > 0 && activeField === 'from' && (
+                <View style={styles.suggestionsContainer}>
+                  <FlatList
+                    data={fromSuggestions}
+                    keyExtractor={item => item.place_id.toString()}
+                    keyboardShouldPersistTaps="handled"
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        style={styles.suggestionItem}
+                        onPress={() => selectFromSuggestion(item)}
+                      >
+                        <Text style={styles.suggestionText}>
+                          <Text>📍 </Text>
+                          {formatDisplayName(item.display_name)}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                    style={styles.suggestionsList}
                   />
                   {searchingTo && (
                     <View style={styles.loadingContainer}>
@@ -305,53 +287,126 @@ export default function PlanTripScreen({ navigation }: Props) {
                   )}
                 </View>
 
-                {/* Battery Level Input */}
-                <View style={styles.batteryContainer}>
-                  <Text style={styles.batteryLabel}>Current Battery Level (%)</Text>
-                  <TextInput
-                    style={styles.batteryInput}
-                    placeholder="Enter battery percentage (0-100)"
-                    value={batteryPercent.toString()}
-                    onChangeText={text => {
-                      const num = parseInt(text) || 0;
-                      setBatteryPercent(Math.min(Math.max(num, 0), 100));
-                    }}
-                    keyboardType="number-pad"
-                    maxLength={3}
-                  />
-                  <Text style={styles.batteryHint}>
-                    Enter your current battery percentage (0-100%)
-                  </Text>
+            {/* TO */}
+            <View style={styles.inputWrapper}>
+              <View style={styles.labelRow}>
+                <View style={styles.labelLeft}>
+                  <Ionicons name="flag-outline" size={16} color="#9CA3AF" />
+                  <Text style={styles.inputLabel}>To</Text>
                 </View>
-
-                {/* Minimum Arrival Battery Input */}
-                <View style={styles.batteryContainer}>
-                  <Text style={styles.batteryLabel}>Minimum Arrival Battery (%)</Text>
-                  <TextInput
-                    style={styles.batteryInput}
-                    placeholder="Minimum battery at destination (0-100)"
-                    value={minArrivalBattery.toString()}
-                    onChangeText={text => {
-                      const num = parseInt(text) || 0;
-                      setMinArrivalBattery(Math.min(Math.max(num, 0), 100));
-                    }}
-                    keyboardType="number-pad"
-                    maxLength={3}
+                <TouchableOpacity
+                  style={styles.locationButton}
+                  onPress={() => getCurrentLocation('to')}
+                  disabled={gettingLocation}
+                >
+                  <Ionicons name="locate-outline" size={14} color="#00F470" />
+                  <Text style={styles.locationButtonText}>
+                    {gettingLocation ? 'Getting...' : 'Use current'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <TextInput
+                style={styles.input}
+                placeholder="Search destination..."
+                placeholderTextColor="#6B7280"
+                value={to}
+                onChangeText={text => {
+                  setTo(text);
+                  setActiveField('to');
+                }}
+                onFocus={() => setActiveField('to')}
+              />
+              {searchingTo && (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color="#00F470" />
+                </View>
+              )}
+              {toSuggestions.length > 0 && activeField === 'to' && (
+                <View style={styles.suggestionsContainer}>
+                  <FlatList
+                    data={toSuggestions}
+                    keyExtractor={item => item.place_id.toString()}
+                    keyboardShouldPersistTaps="handled"
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        style={styles.suggestionItem}
+                        onPress={() => selectToSuggestion(item)}
+                      >
+                        <Text style={styles.suggestionText}>
+                          <Text>📍 </Text>
+                          {formatDisplayName(item.display_name)}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                    style={styles.suggestionsList}
                   />
                   <Text style={styles.batteryHint}>
                     Charging stations will be recommended if needed to reach this level
                   </Text>
                 </View>
 
-                <TouchableOpacity
-                  style={[styles.button, (!from || !to) && styles.buttonDisabled]}
-                  onPress={handlePlanRoute}
-                  disabled={!from || !to}
-                >
-                  <Text style={styles.buttonText}>Find Route</Text>
-                </TouchableOpacity>
-              </>
-            )}
+            {/* Battery Level Input */}
+            <View style={styles.batteryRow}>
+              <View style={styles.batteryContainer}>
+                <View style={styles.batteryLabelRow}>
+                  <MaterialCommunityIcons
+                    name="battery-medium"
+                    size={16}
+                    color="#9CA3AF"
+                    style={{ marginRight: 6 }}
+                  />
+                  <Text style={styles.batteryLabel}>Current battery (%)</Text>
+                </View>
+                <TextInput
+                  style={styles.batteryInput}
+                  placeholder="0–100"
+                  placeholderTextColor="#6B7280"
+                  value={batteryPercent.toString()}
+                  onChangeText={text => {
+                    const num = parseInt(text, 10) || 0;
+                    setBatteryPercent(Math.min(Math.max(num, 0), 100));
+                  }}
+                  keyboardType="number-pad"
+                  maxLength={3}
+                />
+                <Text style={styles.batteryHint}>Your estimated battery right now</Text>
+              </View>
+
+              {/* Minimum Arrival Battery Input */}
+              <View style={styles.batteryContainer}>
+                <View style={styles.batteryLabelRow}>
+                  <MaterialCommunityIcons
+                    name="battery-charging-medium"
+                    size={16}
+                    color="#9CA3AF"
+                    style={{ marginRight: 6 }}
+                  />
+                  <Text style={styles.batteryLabel}>Min. arrival (%)</Text>
+                </View>
+                <TextInput
+                  style={styles.batteryInput}
+                  placeholder="0–100"
+                  placeholderTextColor="#6B7280"
+                  value={minArrivalBattery.toString()}
+                  onChangeText={text => {
+                    const num = parseInt(text, 10) || 0;
+                    setMinArrivalBattery(Math.min(Math.max(num, 0), 100));
+                  }}
+                  keyboardType="number-pad"
+                  maxLength={3}
+                />
+                <Text style={styles.batteryHint}>We&apos;ll suggest charging stops if needed</Text>
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.button, (!from || !to) && styles.buttonDisabled]}
+              onPress={handlePlanRoute}
+              disabled={!from || !to}
+            >
+              <Ionicons name="flash-outline" size={18} color="#000000" style={{ marginRight: 6 }} />
+              <Text style={styles.buttonText}>Find route with chargers</Text>
+            </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
       </View>
@@ -362,21 +417,37 @@ export default function PlanTripScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#050816',
   },
   map: {
     flex: 1,
   },
   inputContainer: {
-    padding: 20,
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 24,
+    backgroundColor: '#050816',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 18,
+  },
+  handleBar: {
+    alignSelf: 'center',
+    width: 50,
+    height: 4,
+    borderRadius: 999,
+    backgroundColor: '#1F2933',
+    marginBottom: 16,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 18,
   },
   inputContainerCollapsed: {
     padding: 10,
@@ -396,110 +467,158 @@ const styles = StyleSheet.create({
     color: '#4CAF50',
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 20,
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#F9FAFB',
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 12,
+    color: '#9CA3AF',
+  },
+  titleIconWrapper: {
+    width: 40,
+    height: 40,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(0,244,112,0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,244,112,0.06)',
   },
   inputWrapper: {
-    marginBottom: 15,
+    marginBottom: 14,
     position: 'relative',
   },
   labelRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 5,
+    marginBottom: 6,
+  },
+  labelLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   inputLabel: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 13,
+    color: '#E5E7EB',
     fontWeight: '600',
   },
   locationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: 'rgba(0,244,112,0.08)',
   },
   locationButtonText: {
-    fontSize: 12,
-    color: '#4CAF50',
+    fontSize: 11,
+    color: '#00F470',
     fontWeight: '600',
+    marginLeft: 4,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 15,
-    fontSize: 16,
+    borderColor: 'rgba(148,163,184,0.35)',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+    backgroundColor: '#0B1020',
+    color: '#F9FAFB',
   },
   loadingContainer: {
     position: 'absolute',
-    right: 15,
-    top: 40,
+    right: 16,
+    top: 42,
   },
   suggestionsContainer: {
     position: 'absolute',
-    top: 75,
+    top: 74,
     left: 0,
     right: 0,
-    backgroundColor: 'white',
-    borderRadius: 10,
+    backgroundColor: '#050816',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(148,163,184,0.35)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 5,
-    maxHeight: 200,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+    elevation: 20,
+    maxHeight: 220,
     zIndex: 1000,
   },
   suggestionsList: {
-    borderRadius: 10,
+    borderRadius: 14,
   },
   suggestionItem: {
-    padding: 15,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: 'rgba(31,41,55,0.7)',
   },
   suggestionText: {
-    fontSize: 14,
-    color: '#333',
+    fontSize: 13,
+    color: '#E5E7EB',
   },
-  button: {
-    backgroundColor: '#4CAF50',
-    paddingVertical: 15,
-    borderRadius: 8,
-    marginTop: 10,
-  },
-  buttonDisabled: {
-    backgroundColor: '#ccc',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-    textAlign: 'center',
+  batteryRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 12,
+    marginBottom: 6,
   },
   batteryContainer: {
-    marginTop: 20,
-    marginBottom: 10,
+    flex: 1,
+  },
+  batteryLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
   },
   batteryLabel: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 13,
+    color: '#E5E7EB',
     fontWeight: '600',
-    marginBottom: 10,
   },
   batteryInput: {
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 15,
-    fontSize: 16,
-    marginBottom: 8,
+    borderColor: 'rgba(148,163,184,0.35)',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+    backgroundColor: '#0B1020',
+    color: '#F9FAFB',
+    marginBottom: 4,
+    textAlign: 'center',
   },
   batteryHint: {
-    fontSize: 12,
-    color: '#999',
+    fontSize: 11,
+    color: '#9CA3AF',
+  },
+  button: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#00F470',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 999,
+    marginTop: 10,
+    alignSelf: 'center',
+    minWidth: '80%',
+  },
+  buttonDisabled: {
+    backgroundColor: '#1F2933',
+  },
+  buttonText: {
+    color: '#000000',
+    fontSize: 16,
+    fontWeight: '700',
     textAlign: 'center',
   },
 });
