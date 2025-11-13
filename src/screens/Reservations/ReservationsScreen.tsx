@@ -1,67 +1,138 @@
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import React from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  Image,
+} from 'react-native';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+
+const CarImage = require('../../../assets/carimage.png');
 
 const MOCK_RESERVATIONS = [
   {
     id: '1',
-    station: 'Downtown Charging Hub',
-    date: 'Nov 15, 2025',
-    time: '10:00 AM',
-    status: 'upcoming',
+    station: 'BF Homes, Paranaque City',
+    hostName: 'Mark Joseph Ilagan',
+    vehicle: 'Tesla Model 3',
+    date: 'September 30, 2025',
+    timeRange: '3:00 PM - 4:00 PM',
+    minutesLeft: 53,
   },
   {
     id: '2',
-    station: 'Mall Plaza Station',
-    date: 'Nov 10, 2025',
-    time: '2:00 PM',
-    status: 'completed',
+    station: 'Katipunan, Quezon City',
+    hostName: 'Ma. Regina Rosel Galfo',
+    vehicle: 'Tesla Model 3',
+    date: 'September 23, 2025',
+    timeRange: '2:00 PM - 4:00 PM',
+    minutesLeft: 0,
   },
   {
     id: '3',
-    station: 'Highway Rest Stop A',
-    date: 'Nov 8, 2025',
-    time: '11:30 AM',
-    status: 'completed',
+    station: 'Timog Avenue, Quezon City',
+    hostName: 'Juan Dela Cruz III',
+    vehicle: 'Tesla Model 3',
+    date: 'September 13, 2025',
+    timeRange: '3:00 PM - 4:00 PM',
+    minutesLeft: 0,
+  },
+  {
+    id: '4',
+    station: 'BF Homes, Paranaque City',
+    hostName: 'Mark Joseph Ilagan',
+    vehicle: 'Tesla Model 3',
+    date: 'September 3, 2025',
+    timeRange: '4:00 PM - 5:00 PM',
+    minutesLeft: 0,
   },
 ];
 
 /**
- * ReservationsScreen displays a list of user's past and upcoming
- * charging station reservations with their current status.
+ * ReservationsScreen shows active & past charging sessions
+ * styled like the Sessions mock: dark theme + hero image + green pill.
  */
 export default function ReservationsScreen() {
-  const renderReservation = ({ item }: { item: (typeof MOCK_RESERVATIONS)[0] }) => (
-    <TouchableOpacity style={styles.reservationCard}>
-      <View style={styles.cardHeader}>
-        <Text style={styles.stationName}>{item.station}</Text>
-        <View
-          style={[
-            styles.statusBadge,
-            item.status === 'upcoming' ? styles.upcomingBadge : styles.completedBadge,
-          ]}
-        >
-          <Text style={styles.statusText}>
-            {item.status === 'upcoming' ? 'Upcoming' : 'Completed'}
+  const renderReservation = ({
+    item,
+    index,
+  }: {
+    item: (typeof MOCK_RESERVATIONS)[0];
+    index: number;
+  }) => {
+    const isOngoing = index === 0 && item.minutesLeft > 0;
+
+    return (
+      <TouchableOpacity style={styles.sessionCard} activeOpacity={0.9}>
+        {/* Big image on top */}
+        <Image source={CarImage} style={styles.thumbnail} />
+
+        {/* Text content */}
+        <View style={styles.sessionContent}>
+          {/* Time / status row */}
+          <View style={styles.timeRow}>
+            <Ionicons
+              name={isOngoing ? 'time-outline' : 'checkmark-circle-outline'}
+              size={16}
+              color={isOngoing ? '#D0D4FF' : TEXT_MUTED}
+            />
+            {isOngoing ? (
+              <Text style={styles.timeText}>
+                <Text style={styles.timeHighlight}>{` ${item.minutesLeft} Mins.`}</Text>
+                <Text style={styles.timeSuffix}> Left</Text>
+              </Text>
+            ) : (
+              <Text style={styles.doneText}> Session Done</Text>
+            )}
+          </View>
+
+          {/* Station name */}
+          <Text style={styles.stationName}>{item.station}</Text>
+
+          {/* Host & car */}
+          <Text style={styles.vehicleText}>{item.vehicle}</Text>
+
+          {/* Date & time */}
+          <Text style={styles.dateText}>
+            {item.date}: {item.timeRange}
           </Text>
+
+          {/* Only first / ongoing session has the Facilitate Charging pill */}
+          {isOngoing && (
+            <View style={styles.pillColumn}>
+              <TouchableOpacity style={styles.primaryPill} activeOpacity={0.9}>
+                <MaterialCommunityIcons
+                  name="flash-outline"
+                  size={14}
+                  color="#02040A"
+                  style={styles.primaryPillIcon}
+                />
+                <Text style={styles.primaryPillText}>Facilitate Charging</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
-      </View>
-      <View style={styles.cardDetails}>
-        <Text style={styles.detailText}>📅 {item.date}</Text>
-        <Text style={styles.detailText}>🕒 {item.time}</Text>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.container}>
       <FlatList
         data={MOCK_RESERVATIONS}
+        keyExtractor={(item) => item.id}
         renderItem={renderReservation}
-        keyExtractor={item => item.id}
         contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        ListHeaderComponent={<Text style={styles.screenTitle}>Sessions</Text>}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>No reservations yet</Text>
-            <Text style={styles.emptySubtext}>Start by finding a nearby charging station</Text>
+            <Text style={styles.emptyText}>No sessions yet</Text>
+            <Text style={styles.emptySubtext}>
+              Start by finding a nearby charging station.
+            </Text>
           </View>
         }
       />
@@ -69,74 +140,120 @@ export default function ReservationsScreen() {
   );
 }
 
+const NEON_GREEN = '#9BFF4F';
+const BACKGROUND = '#02040A';
+const CARD_BG = '#050814';
+const TEXT_MAIN = '#F5F5FF';
+const TEXT_MUTED = '#A4A6C3';
+const TEXT_YELLOW = '#FFD45C';
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: BACKGROUND,
   },
   listContent: {
-    padding: 15,
+    paddingHorizontal: 18,
+    paddingTop: 40,
+    paddingBottom: 24,
   },
-  reservationCard: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+  screenTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: NEON_GREEN,
+    marginBottom: 24,
   },
-  cardHeader: {
+  sessionCard: {
+    backgroundColor: CARD_BG,
+    borderRadius: 28,
+    padding: 16,
+    marginBottom: 22,
+  },
+  thumbnail: {
+    width: '100%',
+    height: 150,
+    borderRadius: 24,
+    marginBottom: 14,
+  },
+  sessionContent: {
+    flex: 1,
+  },
+  timeRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 6,
+  },
+  timeText: {
+    fontSize: 13,
+    color: TEXT_MUTED,
+  },
+  timeHighlight: {
+    color: TEXT_YELLOW,
+    fontWeight: '700',
+  },
+  timeSuffix: {
+    color: TEXT_MUTED,
+    fontWeight: '500',
+  },
+  doneText: {
+    fontSize: 13,
+    color: TEXT_MUTED,
+    fontWeight: '600',
   },
   stationName: {
-    flex: 1,
     fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: '800',
+    color: NEON_GREEN,
+    marginBottom: 6,
   },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  upcomingBadge: {
-    backgroundColor: '#4CAF50',
-  },
-  completedBadge: {
-    backgroundColor: '#9E9E9E',
-  },
-  statusText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  cardDetails: {
-    gap: 5,
-  },
-  detailText: {
+  hostName: {
     fontSize: 14,
-    color: '#666',
+    fontWeight: '600',
+    color: TEXT_MAIN,
+  },
+  vehicleText: {
+    fontSize: 12,
+    color: TEXT_MUTED,
+    marginBottom: 4,
+  },
+  dateText: {
+    fontSize: 11,
+    color: TEXT_MUTED,
+    marginBottom: 14,
+  },
+  pillColumn: {
+    flexDirection: 'column',
+    marginTop: 4,
+  },
+  primaryPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: NEON_GREEN,
+  },
+  primaryPillIcon: {
+    marginRight: 6,
+  },
+  primaryPillText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#02040A',
   },
   emptyState: {
-    flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 60,
+    paddingVertical: 80,
   },
   emptyText: {
     fontSize: 20,
-    fontWeight: '600',
-    color: '#666',
-    marginBottom: 10,
+    fontWeight: '700',
+    color: TEXT_MAIN,
+    marginBottom: 8,
   },
   emptySubtext: {
-    fontSize: 16,
-    color: '#999',
+    fontSize: 14,
+    color: TEXT_MUTED,
   },
 });
