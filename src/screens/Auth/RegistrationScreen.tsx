@@ -16,11 +16,7 @@ export default function RegistrationScreen({ navigation }: Props) {
   return (
     <Pressable style={styles.container} onPress={handleGetStarted}>
       <View style={styles.innerFrame}>
-        <Image
-          source={welcomeLogo}
-          style={styles.logo}
-          resizeMode="contain"
-        />
+        <Image source={welcomeLogo} style={styles.logo} resizeMode="contain" />
       </View>
     </Pressable>
   );
