@@ -1,13 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { lazy, useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   Image,
+  Animated,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Circle, Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
+import CircleMarker from 'react-native-maps';
 import { MapStackParamList, EnrichedStation } from '@/types/navigation';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { OPENCHARGEMAP_API_KEY } from '@env';
@@ -28,10 +30,10 @@ const EVCarIcon = require('../../../assets/evcaricon.png');
 export default function MapHomeScreen({ navigation }: Props) {
 
   const [region] = useState({
-    latitude: 14.5995,
-    longitude: 120.9842,
-    latitudeDelta: 0.0922,
-    longitudeDelta: 0.0421,
+    latitude: 15.809468984985767,
+    longitude: 121.44006445079778,
+    latitudeDelta: 20.8,
+    longitudeDelta: 20.6,
   });
 
 
@@ -39,6 +41,21 @@ export default function MapHomeScreen({ navigation }: Props) {
   const [rawPOIs, setRawPOIs] = useState<any[]>([]); // store full API data for enrichment
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const userLocation = { latitude: 14.59144955737441, longitude: 121.06729986080205 };
+  const pulseScale = useRef(new Animated.Value(0)).current;
+  const pulseOpacity = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const loop = () => {
+      pulseScale.setValue(0);
+      pulseOpacity.setValue(0.8);
+      Animated.parallel([
+        Animated.timing(pulseScale, { toValue: 1, duration: 1800, useNativeDriver: true }),
+        Animated.timing(pulseOpacity, { toValue: 0, duration: 1800, useNativeDriver: true }),
+      ]).start(loop);
+    };
+    loop();
+  }, [pulseScale, pulseOpacity]);
 
   useEffect(() => {
     async function loadPOIs() {
@@ -95,121 +112,147 @@ export default function MapHomeScreen({ navigation }: Props) {
     loadPOIs();
   }, []);
   const styles = StyleSheet.create({
-  // FULL-SCREEN DARK BACKGROUND
-  screen: {
-    flex: 1,
-    backgroundColor: '#050A10', // fill whole screen
-  },
+    // FULL-SCREEN DARK BACKGROUND
+    screen: {
+      flex: 1,
+      backgroundColor: '#050A10', // fill whole screen
+    },
 
-  // TOP “MAP” AREA
-  mapArea: {
-    flex: 1.3,
-    backgroundColor: '#050A10',
-  },
+    // TOP “MAP” AREA
+    mapArea: {
+      flex: 1.3,
+      backgroundColor: '#050A10',
+    },
 
-  // BOTTOM CONTENT AREA
-  bottomContent: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 26,
-  },
+    // BOTTOM CONTENT AREA
+    bottomContent: {
+      flex: 1,
+      paddingHorizontal: 20,
+      paddingTop: 20,
+      paddingBottom: 0,
+    },
 
-  greetingRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginBottom: 18,
-  },
-  greetingText: {
-    fontSize: 30,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 10,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  infoText: {
-    color: '#C6CFD7',
-    fontSize: 15,
-    marginBottom: 2,
-  },
-  batteryPill: {
-    marginTop: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: '#261013',
-  },
-  batteryText: {
-    marginLeft: 6,
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#FF5252',
-  },
+    greetingRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-end',
+      marginBottom: 18,
+    },
+    greetingText: {
+      fontSize: 30,
+      fontWeight: '700',
+      color: '#FFFFFF',
+      marginBottom: 10,
+    },
+    infoRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    infoText: {
+      color: '#C6CFD7',
+      fontSize: 15,
+      marginBottom: 2,
+    },
+    batteryPill: {
+      marginTop: 14,
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      paddingHorizontal: 14,
+      paddingVertical: 6,
+      borderRadius: 999,
+      backgroundColor: '#261013',
+    },
+    batteryText: {
+      marginLeft: 6,
+      fontSize: 14,
+      fontWeight: '700',
+      color: '#FF5252',
+    },
 
-  carImage: {
-    width: 190,
-    height: 100,
-  },
+    carImage: {
+      width: 190,
+      height: 100,
+    },
 
-  buttonContainer: {
-    marginTop: 4,
-    gap: 12,
-  },
-  button: {
-    backgroundColor: '#4CAF50',
-    paddingVertical: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonIcon: {
-    marginRight: 10,
-  },
-  primaryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#46F98C',
-    paddingVertical: 16,
-    borderRadius: 20,
-  },
-  primaryButtonText: {
-    color: '#02110A',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  secondaryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#171C24',
-    paddingVertical: 16,
-    borderRadius: 20,
-  },
-  secondaryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '600',
-    textAlign: 'center',
-  }});
+    buttonContainer: {
+      marginTop: 4,
+      gap: 12,
+    },
+    button: {
+      backgroundColor: '#4CAF50',
+      paddingVertical: 15,
+      borderRadius: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    buttonIcon: {
+      marginRight: 10,
+    },
+    primaryButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#46F98C',
+      paddingVertical: 16,
+      borderRadius: 20,
+    },
+    primaryButtonText: {
+      color: '#02110A',
+      fontSize: 18,
+      fontWeight: '700',
+    },
+    secondaryButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#171C24',
+      paddingVertical: 16,
+      borderRadius: 20,
+    },
+    secondaryButtonText: {
+      color: '#FFFFFF',
+      fontSize: 18,
+      fontWeight: '600',
+    },
+    buttonText: {
+      color: '#FFFFFF',
+      fontSize: 18,
+      fontWeight: '600',
+      textAlign: 'center',
+    },
+    userMarkerWrapper: {
+      width: 28,
+      height: 28,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    userMarkerCore: {
+      width: 16,
+      height: 16,
+      borderRadius: 8,
+      backgroundColor: '#00E0A8',
+      borderWidth: 2,
+      borderColor: '#ffffff',
+      shadowColor: '#00E0A8',
+      shadowOpacity: 0.7,
+      shadowRadius: 4,
+      elevation: 6,
+    },
+    userMarkerPulse: {
+      position: 'absolute',
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: '#00E0A8',
+    },
+  });
 
   return (
     <View style={styles.screen}>
       {/* Top “map” area (just dark for now) */}
       <View style={styles.mapArea}>
-         <MapView
+        <MapView
           style={StyleSheet.absoluteFill}
           initialRegion={region}
           provider={PROVIDER_GOOGLE}
@@ -217,6 +260,32 @@ export default function MapHomeScreen({ navigation }: Props) {
           showsUserLocation
           showsMyLocationButton
         >
+          <Marker
+            coordinate={userLocation}
+            anchor={{ x: 0.5, y: 0.5 }}
+            tracksViewChanges={false}
+            zIndex={999}
+          >
+            <View style={styles.userMarkerWrapper}>
+              <Animated.View
+                style={[
+                  styles.userMarkerPulse,
+                  {
+                    opacity: pulseOpacity,
+                    transform: [
+                      {
+                        scale: pulseScale.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0.4, 3.2],
+                        }),
+                      },
+                    ],
+                  },
+                ]}
+              />
+              <View style={styles.userMarkerCore} />
+            </View>
+          </Marker>
           {markers.map((m) => (
             <Marker
               key={`ocm-${m.id}`}
@@ -228,7 +297,7 @@ export default function MapHomeScreen({ navigation }: Props) {
           ))}
         </MapView>
       </View>
-      
+
 
       {/* Bottom content */}
       <View style={styles.bottomContent}>
@@ -238,7 +307,7 @@ export default function MapHomeScreen({ navigation }: Props) {
             <Text style={styles.greetingText}>Welcome back!</Text>
 
             <View style={styles.infoRow}>
-              <Text style={styles.infoText}>9:30 A.M.</Text>
+              <Text style={styles.infoText}>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
             </View>
 
             <View style={styles.infoRow}>
@@ -342,7 +411,7 @@ export default function MapHomeScreen({ navigation }: Props) {
             <Text style={styles.secondaryButtonText}>Plan a Trip</Text>
           </TouchableOpacity>
         </View>
-    </View>
+      </View>
     </View>
   );
 }
