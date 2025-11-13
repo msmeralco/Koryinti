@@ -68,6 +68,7 @@ module.exports = tseslint.config(
       'build/**',
       '*.config.js',
       'babel.config.js',
+      '*.cjs',
     ],
   }
 );
