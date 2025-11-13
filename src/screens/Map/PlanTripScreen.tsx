@@ -40,6 +40,7 @@ export default function PlanTripScreen({ navigation }: Props) {
   const [activeField, setActiveField] = useState<'from' | 'to' | null>(null);
   const [gettingLocation, setGettingLocation] = useState(false);
   const [nearbyStations, setNearbyStations] = useState<Station[]>([]);
+  const [isFormCollapsed, setIsFormCollapsed] = useState(false);
 
   // Map region - will update to user's location
   const [region, setRegion] = useState({
@@ -189,152 +190,168 @@ export default function PlanTripScreen({ navigation }: Props) {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
         >
-          <View style={styles.inputContainer}>
-            <Text style={styles.title}>Plan Your Trip</Text>
-
-            <View style={styles.inputWrapper}>
-              <View style={styles.labelRow}>
-                <Text style={styles.inputLabel}>From</Text>
-                <TouchableOpacity
-                  style={styles.locationButton}
-                  onPress={() => getCurrentLocation('from')}
-                  disabled={gettingLocation}
-                >
-                  <Text style={styles.locationButtonText}>
-                    {gettingLocation ? '📍 Getting...' : '📍 Current Location'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              <TextInput
-                style={styles.input}
-                placeholder="Search: SM Mall of Asia, Makati, etc."
-                value={from}
-                onChangeText={text => {
-                  setFrom(text);
-                  setActiveField('from');
-                }}
-                onFocus={() => setActiveField('from')}
-              />
-              {searchingFrom && (
-                <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="small" color="#4CAF50" />
-                </View>
-              )}
-              {fromSuggestions.length > 0 && activeField === 'from' && (
-                <View style={styles.suggestionsContainer}>
-                  <FlatList
-                    data={fromSuggestions}
-                    keyExtractor={item => item.place_id.toString()}
-                    keyboardShouldPersistTaps="handled"
-                    renderItem={({ item }) => (
-                      <TouchableOpacity
-                        style={styles.suggestionItem}
-                        onPress={() => selectFromSuggestion(item)}
-                      >
-                        <Text style={styles.suggestionText}>
-                          📍 {formatDisplayName(item.display_name)}
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-                    style={styles.suggestionsList}
-                  />
-                </View>
-              )}
-            </View>
-
-            <View style={styles.inputWrapper}>
-              <View style={styles.labelRow}>
-                <Text style={styles.inputLabel}>To</Text>
-                <TouchableOpacity
-                  style={styles.locationButton}
-                  onPress={() => getCurrentLocation('to')}
-                  disabled={gettingLocation}
-                >
-                  <Text style={styles.locationButtonText}>
-                    {gettingLocation ? '📍 Getting...' : '📍 Current Location'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              <TextInput
-                style={styles.input}
-                placeholder="Search destination..."
-                value={to}
-                onChangeText={text => {
-                  setTo(text);
-                  setActiveField('to');
-                }}
-                onFocus={() => setActiveField('to')}
-              />
-              {searchingTo && (
-                <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="small" color="#4CAF50" />
-                </View>
-              )}
-              {toSuggestions.length > 0 && activeField === 'to' && (
-                <View style={styles.suggestionsContainer}>
-                  <FlatList
-                    data={toSuggestions}
-                    keyExtractor={item => item.place_id.toString()}
-                    keyboardShouldPersistTaps="handled"
-                    renderItem={({ item }) => (
-                      <TouchableOpacity
-                        style={styles.suggestionItem}
-                        onPress={() => selectToSuggestion(item)}
-                      >
-                        <Text style={styles.suggestionText}>
-                          📍 {formatDisplayName(item.display_name)}
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-                    style={styles.suggestionsList}
-                  />
-                </View>
-              )}
-            </View>
-
-            {/* Battery Level Input */}
-            <View style={styles.batteryContainer}>
-              <Text style={styles.batteryLabel}>Current Battery Level (%)</Text>
-              <TextInput
-                style={styles.batteryInput}
-                placeholder="Enter battery percentage (0-100)"
-                value={batteryPercent.toString()}
-                onChangeText={text => {
-                  const num = parseInt(text) || 0;
-                  setBatteryPercent(Math.min(Math.max(num, 0), 100));
-                }}
-                keyboardType="number-pad"
-                maxLength={3}
-              />
-              <Text style={styles.batteryHint}>Enter your current battery percentage (0-100%)</Text>
-            </View>
-
-            {/* Minimum Arrival Battery Input */}
-            <View style={styles.batteryContainer}>
-              <Text style={styles.batteryLabel}>Minimum Arrival Battery (%)</Text>
-              <TextInput
-                style={styles.batteryInput}
-                placeholder="Minimum battery at destination (0-100)"
-                value={minArrivalBattery.toString()}
-                onChangeText={text => {
-                  const num = parseInt(text) || 0;
-                  setMinArrivalBattery(Math.min(Math.max(num, 0), 100));
-                }}
-                keyboardType="number-pad"
-                maxLength={3}
-              />
-              <Text style={styles.batteryHint}>
-                Charging stations will be recommended if needed to reach this level
-              </Text>
-            </View>
-
+          <View style={[styles.inputContainer, isFormCollapsed && styles.inputContainerCollapsed]}>
+            {/* Collapse/Expand Toggle Button */}
             <TouchableOpacity
-              style={[styles.button, (!from || !to) && styles.buttonDisabled]}
-              onPress={handlePlanRoute}
-              disabled={!from || !to}
+              style={styles.toggleButton}
+              onPress={() => setIsFormCollapsed(!isFormCollapsed)}
             >
-              <Text style={styles.buttonText}>Find Route</Text>
+              <Text style={styles.toggleButtonText}>
+                {isFormCollapsed ? '▲ Show Trip Details' : '▼ Hide to View Map'}
+              </Text>
             </TouchableOpacity>
+
+            {!isFormCollapsed && (
+              <>
+                <Text style={styles.title}>Plan Your Trip</Text>
+
+                <View style={styles.inputWrapper}>
+                  <View style={styles.labelRow}>
+                    <Text style={styles.inputLabel}>From</Text>
+                    <TouchableOpacity
+                      style={styles.locationButton}
+                      onPress={() => getCurrentLocation('from')}
+                      disabled={gettingLocation}
+                    >
+                      <Text style={styles.locationButtonText}>
+                        {gettingLocation ? '📍 Getting...' : '📍 Current Location'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Search: SM Mall of Asia, Makati, etc."
+                    value={from}
+                    onChangeText={text => {
+                      setFrom(text);
+                      setActiveField('from');
+                    }}
+                    onFocus={() => setActiveField('from')}
+                  />
+                  {searchingFrom && (
+                    <View style={styles.loadingContainer}>
+                      <ActivityIndicator size="small" color="#4CAF50" />
+                    </View>
+                  )}
+                  {fromSuggestions.length > 0 && activeField === 'from' && (
+                    <View style={styles.suggestionsContainer}>
+                      <FlatList
+                        data={fromSuggestions}
+                        keyExtractor={item => item.place_id.toString()}
+                        keyboardShouldPersistTaps="handled"
+                        renderItem={({ item }) => (
+                          <TouchableOpacity
+                            style={styles.suggestionItem}
+                            onPress={() => selectFromSuggestion(item)}
+                          >
+                            <Text style={styles.suggestionText}>
+                              📍 {formatDisplayName(item.display_name)}
+                            </Text>
+                          </TouchableOpacity>
+                        )}
+                        style={styles.suggestionsList}
+                      />
+                    </View>
+                  )}
+                </View>
+
+                <View style={styles.inputWrapper}>
+                  <View style={styles.labelRow}>
+                    <Text style={styles.inputLabel}>To</Text>
+                    <TouchableOpacity
+                      style={styles.locationButton}
+                      onPress={() => getCurrentLocation('to')}
+                      disabled={gettingLocation}
+                    >
+                      <Text style={styles.locationButtonText}>
+                        {gettingLocation ? '📍 Getting...' : '📍 Current Location'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Search destination..."
+                    value={to}
+                    onChangeText={text => {
+                      setTo(text);
+                      setActiveField('to');
+                    }}
+                    onFocus={() => setActiveField('to')}
+                  />
+                  {searchingTo && (
+                    <View style={styles.loadingContainer}>
+                      <ActivityIndicator size="small" color="#4CAF50" />
+                    </View>
+                  )}
+                  {toSuggestions.length > 0 && activeField === 'to' && (
+                    <View style={styles.suggestionsContainer}>
+                      <FlatList
+                        data={toSuggestions}
+                        keyExtractor={item => item.place_id.toString()}
+                        keyboardShouldPersistTaps="handled"
+                        renderItem={({ item }) => (
+                          <TouchableOpacity
+                            style={styles.suggestionItem}
+                            onPress={() => selectToSuggestion(item)}
+                          >
+                            <Text style={styles.suggestionText}>
+                              📍 {formatDisplayName(item.display_name)}
+                            </Text>
+                          </TouchableOpacity>
+                        )}
+                        style={styles.suggestionsList}
+                      />
+                    </View>
+                  )}
+                </View>
+
+                {/* Battery Level Input */}
+                <View style={styles.batteryContainer}>
+                  <Text style={styles.batteryLabel}>Current Battery Level (%)</Text>
+                  <TextInput
+                    style={styles.batteryInput}
+                    placeholder="Enter battery percentage (0-100)"
+                    value={batteryPercent.toString()}
+                    onChangeText={text => {
+                      const num = parseInt(text) || 0;
+                      setBatteryPercent(Math.min(Math.max(num, 0), 100));
+                    }}
+                    keyboardType="number-pad"
+                    maxLength={3}
+                  />
+                  <Text style={styles.batteryHint}>
+                    Enter your current battery percentage (0-100%)
+                  </Text>
+                </View>
+
+                {/* Minimum Arrival Battery Input */}
+                <View style={styles.batteryContainer}>
+                  <Text style={styles.batteryLabel}>Minimum Arrival Battery (%)</Text>
+                  <TextInput
+                    style={styles.batteryInput}
+                    placeholder="Minimum battery at destination (0-100)"
+                    value={minArrivalBattery.toString()}
+                    onChangeText={text => {
+                      const num = parseInt(text) || 0;
+                      setMinArrivalBattery(Math.min(Math.max(num, 0), 100));
+                    }}
+                    keyboardType="number-pad"
+                    maxLength={3}
+                  />
+                  <Text style={styles.batteryHint}>
+                    Charging stations will be recommended if needed to reach this level
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  style={[styles.button, (!from || !to) && styles.buttonDisabled]}
+                  onPress={handlePlanRoute}
+                  disabled={!from || !to}
+                >
+                  <Text style={styles.buttonText}>Find Route</Text>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         </KeyboardAvoidingView>
       </View>
@@ -360,6 +377,23 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 5,
+  },
+  inputContainerCollapsed: {
+    padding: 10,
+    paddingBottom: 20,
+  },
+  toggleButton: {
+    alignSelf: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 20,
+    marginBottom: 10,
+  },
+  toggleButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#4CAF50',
   },
   title: {
     fontSize: 24,
