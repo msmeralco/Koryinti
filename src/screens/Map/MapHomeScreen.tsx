@@ -1,7 +1,16 @@
-import React, { useState, useEffect, lazy, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Animated } from 'react-native';
+import React, { lazy, useEffect, useState, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  Animated,
+  Modal,
+} from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import MapView, { Circle, Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Circle, Marker, Callout, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
+import CircleMarker from 'react-native-maps';
 import { MapStackParamList, EnrichedStation } from '@/types/navigation';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { OPENCHARGEMAP_API_KEY } from '@env';
@@ -24,6 +33,9 @@ export default function MapHomeScreen({ navigation }: Props) {
   const [markers, setMarkers] = useState<ChargingMarker[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [rawPOIs, setRawPOIs] = useState<any[]>([]); // store full API data for enrichment
+  const [enrichedStations, setEnrichedStations] = useState<EnrichedStation[]>([]);
+  const [modalStation, setModalStation] = useState<EnrichedStation | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [region] = useState({
@@ -93,7 +105,62 @@ export default function MapHomeScreen({ navigation }: Props) {
           .filter(Boolean) as ChargingMarker[];
 
         setMarkers(mapped);
-      } catch (err: unknown) {
+
+        // Also create an enriched station list so markers can navigate to StationProfile
+        const userLat = userLocation.latitude;
+        const userLng = userLocation.longitude;
+        const enriched: EnrichedStation[] = (data || [])
+          .map((poi: any) => {
+            const a = poi?.AddressInfo;
+            if (!a || a?.Latitude == null || a?.Longitude == null) return null;
+            const connections = poi?.Connections || [];
+            const totalPlugs = connections.length || 1;
+            const plugsInUse = Math.floor(Math.random() * totalPlugs);
+            const availablePlugs = Math.max(totalPlugs - plugsInUse, 0);
+            const plugTypes = connections.map((c: any) => c.ConnectionType?.Title).filter(Boolean);
+            const powerKW = connections.reduce((sum: number, c: any) => sum + (c.PowerKW || 0), 0) || 0;
+            // Haversine distance
+            const R = 6371; // km
+            const lat = a.Latitude;
+            const lng = a.Longitude;
+            const dLat = (lat - userLat) * Math.PI / 180;
+            const dLng = (lng - userLng) * Math.PI / 180;
+            const aHarv = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(userLat * Math.PI / 180) * Math.cos(lat * Math.PI / 180) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+            const cHarv = 2 * Math.atan2(Math.sqrt(aHarv), Math.sqrt(1 - aHarv));
+            const distanceKm = R * cHarv;
+            const avgSpeedKmh = 30; // heuristic urban speed
+            const driveMinutes = (distanceKm / avgSpeedKmh) * 60;
+            const rating = +((Math.random() * 1.5) + 3.5).toFixed(1);
+            const pricePerKWh = +((Math.random() * 10) + 15).toFixed(2);
+            const amenities = {
+              wifi: Math.random() > 0.5,
+              bathroom: Math.random() > 0.4,
+              pwdFriendly: Math.random() > 0.6,
+              waitingLounge: Math.random() > 0.3,
+            };
+            return {
+              id: String(poi.ID || poi.id || Math.random()),
+              title: a.Title || a.AddressLine1 || 'Charging Site',
+              address: [a.AddressLine1, a.Town, a.StateOrProvince].filter(Boolean).join(', '),
+              latitude: lat,
+              longitude: lng,
+              totalPlugs,
+              plugsInUse,
+              availablePlugs,
+              plugTypes,
+              powerKW,
+              distanceKm,
+              driveMinutes,
+              rating,
+              pricePerKWh,
+              amenities,
+              state: a.StateOrProvince || '',
+            } as EnrichedStation;
+          })
+          .filter(Boolean) as EnrichedStation[];
+
+        setEnrichedStations(enriched);
+      } catch (err: any) {
         console.error('Failed to load OpenChargeMap POIs', err);
         setError(err instanceof Error ? err.message : String(err));
       } finally {
@@ -238,6 +305,55 @@ export default function MapHomeScreen({ navigation }: Props) {
       borderRadius: 14,
       backgroundColor: '#00E0A8',
     },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+    },
+    modalCard: {
+      width: '100%',
+      maxWidth: 420,
+      backgroundColor: '#fff',
+      borderRadius: 12,
+      padding: 18,
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      marginBottom: 8,
+    },
+    modalAddress: {
+      color: '#444',
+      marginBottom: 8,
+    },
+    modalDetail: {
+      marginBottom: 12,
+      color: '#333',
+    },
+    modalButtonsRow: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      gap: 8,
+    },
+    modalButton: {
+      backgroundColor: '#4CAF50',
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      borderRadius: 8,
+    },
+    modalButtonText: {
+      color: '#fff',
+      fontWeight: '700',
+    },
+    modalSecondary: {
+      backgroundColor: '#f0f0f0',
+      marginLeft: 8,
+    },
+    modalSecondaryText: {
+      color: '#333',
+    },
   });
 
   return (
@@ -278,22 +394,46 @@ export default function MapHomeScreen({ navigation }: Props) {
               <View style={styles.userMarkerCore} />
             </View>
           </Marker>
-          {markers.map(m => (
+          {/* rendering enrichedStations below instead of the simpler markers to enable profile navigation */}
+          {enrichedStations.map(s => (
             <Marker
-              key={`ocm-${m.id}`}
-              coordinate={{ latitude: m.latitude, longitude: m.longitude }}
-              title={m.title}
-              description={m.address}
-              pinColor="wheat"
-            />
+              key={`station-${s.id}`}
+              coordinate={{ latitude: s.latitude, longitude: s.longitude }}
+              title={s.title}
+              description={s.address}
+              pinColor="red"
+              onPress={() => { setModalStation(s); setModalVisible(true); }}
+            >
+            </Marker>
           ))}
         </MapView>
+        {/* Modal fallback for markers (reliable across platforms) */}
+        <Modal visible={modalVisible} transparent animationType="slide" onRequestClose={() => setModalVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalCard}>
+              <Text style={styles.modalTitle}>{modalStation?.title}</Text>
+              <Text style={styles.modalAddress} numberOfLines={3}>{modalStation?.address}</Text>
+              <Text style={styles.modalDetail}>Available: {modalStation?.availablePlugs}/{modalStation?.totalPlugs}</Text>
+              <View style={styles.modalButtonsRow}>
+                <TouchableOpacity style={styles.modalButton} onPress={() => { if (modalStation) { setModalVisible(false); navigation.navigate('StationProfile', { station: modalStation }); } }}>
+                  <Text style={styles.modalButtonText}>View Profile</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.modalButton, styles.modalSecondary]} onPress={() => setModalVisible(false)}>
+                  <Text style={[styles.modalButtonText, styles.modalSecondaryText]}>Close</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </View>
 
       {/* Bottom content */}
       <View style={styles.bottomContent}>
         {/* Back button + Greeting + info + car */}
-        <View style={{flexDirection:'row', alignItems:'center', marginBottom:6}}> Ch
+        <View style={{flexDirection:'row', alignItems:'center', marginBottom:6}}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={{padding:6, marginRight:8}}>
+            <Ionicons name="arrow-back" size={22} color="#FFFFFF" />
+          </TouchableOpacity>
         </View>
 
         <View style={styles.greetingRow}>
