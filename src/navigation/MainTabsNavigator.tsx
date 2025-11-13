@@ -6,10 +6,12 @@ import { MainTabsParamList } from '@/types/navigation';
 import MapNavigator from './MapNavigator';
 import ProfileScreen from '@/screens/Profile/ProfileScreen';
 import ReservationsScreen from '@/screens/Reservations/ReservationsScreen';
+import DataScreen from '@/screens/Admin/AdminDashboard';
 
 import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 
 const Tab = createBottomTabNavigator<MainTabsParamList>();
+
 /**
  * MainTabsNavigator provides the primary bottom tab navigation
  * for the main sections of the app after user registration/login
@@ -19,23 +21,24 @@ const TAB_BAR_BG = '#050608';
 const ACTIVE_PILL = '#4CAF50';
 const ACTIVE_TEXT = '#FFFFFF';
 const INACTIVE_ICON = 'rgba(255,255,255,0.8)';
+const HORIZONTAL_PADDING = 24; // inset bar so pill never touches phone edge
 
 function TabItem({
   focused,
   label,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   IconComponent,
   iconName,
 }: {
   focused: boolean;
   label: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   IconComponent: any;
   iconName: string;
 }) {
   if (focused) {
     return (
       <View style={styles.tabWrapper}>
-        <View style={styles.pill}>
+        <View style={styles.pillStatic}>
           <IconComponent name={iconName} size={22} color={ACTIVE_TEXT} />
           <Text style={styles.pillLabel}>{label}</Text>
         </View>
@@ -50,10 +53,21 @@ function TabItem({
 }
 
 // ---------- helpers ----------
-const getLabel = (name: string) =>
-  name === 'Map' ? 'Home' : name === 'Reservations' ? 'Sessions' : 'Profile';
+const getLabel = (name: string) => {
+  switch (name) {
+    case 'Map':
+      return 'Map';
+    case 'Reservations':
+      return 'Past';
+    case 'Data':
+      return 'Data';
+    case 'Profile':
+    default:
+      return 'Me';
+  }
+};
 
-// pill width based on icon + label + symmetric padding
+// pill width based on icon + label + symmetric padding, clamped per tab
 const getPillWidthForRoute = (routeName: string, tabWidth: number) => {
   const label = getLabel(routeName);
   const charCount = label.length;
@@ -61,12 +75,14 @@ const getPillWidthForRoute = (routeName: string, tabWidth: number) => {
   const iconWidth = 24;
   const labelMargin = 8;
   const perChar = 11; // approximate char width
-  const sidePadding = 16;
+  const sidePadding = 16; // inner pill padding
 
   const contentWidth = iconWidth + labelMargin + perChar * charCount;
   const rawWidth = contentWidth + 2 * sidePadding;
 
-  return Math.min(rawWidth, tabWidth * 0.9);
+  // leave a small gap inside each tab so pill never hits its borders
+  const maxWidth = tabWidth - 12; // 6 px gap left/right inside tab cell
+  return Math.min(rawWidth, maxWidth);
 };
 
 const getIcon = (name: string, color: string, size: number) => {
@@ -75,6 +91,8 @@ const getIcon = (name: string, color: string, size: number) => {
       return <Ionicons name="home-outline" size={size} color={color} />;
     case 'Reservations':
       return <MaterialCommunityIcons name="clipboard-text-outline" size={size} color={color} />;
+    case 'Data':
+      return <Feather name="bar-chart-2" size={size} color={color} />;
     case 'Profile':
       return <Feather name="user" size={size} color={color} />;
     default:
@@ -85,15 +103,17 @@ const getIcon = (name: string, color: string, size: number) => {
 // ---------- custom animated tab bar ----------
 function AnimatedTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const { width } = Dimensions.get('window');
+
   const TAB_COUNT = state.routes.length;
-  const tabWidth = width / TAB_COUNT;
+  const usableWidth = width - HORIZONTAL_PADDING * 2; // inset from edges
+  const tabWidth = usableWidth / TAB_COUNT;
 
   const barHeight = 80;
   const pillHeight = 36;
 
   const animatedIndex = useRef(new Animated.Value(state.index)).current;
   const animatedWidth = useRef(
-    new Animated.Value(getPillWidthForRoute(state.routes[state.index].name, tabWidth))
+    new Animated.Value(getPillWidthForRoute(state.routes[state.index].name, tabWidth)),
   ).current;
 
   useEffect(() => {
@@ -116,14 +136,14 @@ function AnimatedTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
     ]).start();
   }, [state.index, state.routes, tabWidth, animatedIndex, animatedWidth]);
 
-  // pill horizontal movement
+  // pill horizontal movement (respecting horizontal padding)
   const centerTranslateX = Animated.add(
     Animated.multiply(animatedIndex, new Animated.Value(tabWidth)),
-    new Animated.Value(tabWidth / 2)
+    new Animated.Value(tabWidth / 2 + HORIZONTAL_PADDING),
   );
   const pillTranslateX = Animated.subtract(
     centerTranslateX,
-    Animated.divide(animatedWidth, new Animated.Value(2))
+    Animated.divide(animatedWidth, new Animated.Value(2)),
   );
 
   return (
@@ -235,12 +255,7 @@ export default function MainTabsNavigator() {
         component={MapNavigator}
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabItem
-              focused={focused}
-              label="Home"
-              IconComponent={Ionicons}
-              iconName="home-outline"
-            />
+            <TabItem focused={focused} label="Home" IconComponent={Ionicons} iconName="home-outline" />
           ),
         }}
       />
@@ -257,6 +272,17 @@ export default function MainTabsNavigator() {
               IconComponent={MaterialCommunityIcons}
               iconName="clipboard-text-outline"
             />
+          ),
+        }}
+      />
+
+      {/* DATA */}
+      <Tab.Screen
+        name="Data"
+        component={DataScreen}
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <TabItem focused={focused} label="Data" IconComponent={Feather} iconName="bar-chart-2" />
           ),
         }}
       />
@@ -280,14 +306,24 @@ const styles = StyleSheet.create({
   tabBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#050608',
+    backgroundColor: TAB_BAR_BG,
     borderTopWidth: 0,
+    paddingHorizontal: HORIZONTAL_PADDING, // compress icons from edges
   },
   pill: {
     position: 'absolute',
     borderRadius: 999,
-    backgroundColor: '#00F470', // your bright green
+    backgroundColor: '#00F470', // active pill
     zIndex: 0,
+  },
+  pillStatic: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 999,
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    backgroundColor: ACTIVE_PILL,
   },
   tabItem: {
     justifyContent: 'center',
@@ -296,8 +332,8 @@ const styles = StyleSheet.create({
   },
   tabContent: {
     flexDirection: 'row',
-    alignItems: 'center', // vertical centering inside pill
-    justifyContent: 'center', // horizontal centering
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   label: {
     fontSize: 14,
@@ -310,6 +346,6 @@ const styles = StyleSheet.create({
   pillLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: ACTIVE_TEXT,
   },
 });

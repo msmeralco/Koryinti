@@ -71,13 +71,7 @@ export default function ProfileScreen() {
             <Text style={styles.menuText}>Help & Support</Text>
             <Text style={styles.menuArrow}>›</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => navigation.navigate('AdminDashboard')}
-          >
-            <Text style={styles.menuText}>Admin Dashboard</Text>
-            <Text style={styles.menuArrow}>›</Text>
-          </TouchableOpacity>
+          
         </View>
 
         {/* LOGOUT */}

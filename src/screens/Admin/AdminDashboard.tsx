@@ -139,13 +139,6 @@ export default function AdminDashboard() {
         {/* Header with back button */}
         <View style={styles.headerRow}>
           <View style={styles.headerLeft}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => navigation.goBack()}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name="arrow-back" size={18} color="#F9FAFB" />
-            </TouchableOpacity>
             <View>
               <Text style={styles.title}>Admin Dashboard</Text>
               <Text style={styles.subtitle}>Electric Consumption Analytics</Text>
