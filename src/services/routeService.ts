@@ -5,14 +5,22 @@ import {
   estimateBatteryConsumption,
   getDefaultVehicleSpecs,
 } from './vehicleDatabase';
+import { calculateRoute as calculateOpenRoute } from './openRouteService';
+import {
+  searchStationsAlongRoute,
+  searchStationsNearPoint,
+  filterStations,
+  ChargingStation,
+} from './openChargeMapService';
+import { searchPlaces } from './geocodingService';
 
 /**
  * RouteService handles route calculation and charging station optimization
- * Currently uses mock data - will integrate with real APIs later
+ * Integrates OpenRouteService for routing and OpenChargeMap for stations
  */
 
-// Mock charging stations in Metro Manila
-const MOCK_CHARGING_STATIONS: Station[] = [
+// Fallback mock stations (only used if APIs fail)
+const FALLBACK_STATIONS: Station[] = [
   {
     id: '1',
     name: 'SM Mall of Asia EV Charging',
@@ -89,135 +97,188 @@ interface RouteCalculationParams {
 
 /**
  * Calculate route with optimal charging stops
- * Uses stored vehicle data to determine charging needs
+ * Uses real APIs: OpenRouteService for routing, OpenChargeMap for stations
  */
 export async function calculateRoute(params: RouteCalculationParams): Promise<Route> {
   const { from, to } = params;
 
-  // Get vehicle data from storage
-  let vehicleData = null;
   try {
-    const stored = await AsyncStorage.getItem('vehicleData');
-    vehicleData = stored ? JSON.parse(stored) : null;
-  } catch (error) {
-    console.error('Error loading vehicle data:', error);
-  }
+    // Get vehicle data from storage
+    let vehicleData = null;
+    try {
+      const stored = await AsyncStorage.getItem('vehicleData');
+      vehicleData = stored ? JSON.parse(stored) : null;
+    } catch (error) {
+      console.error('Error loading vehicle data:', error);
+    }
 
-  // Use stored data or defaults
-  const defaultSpecs = getDefaultVehicleSpecs();
-  const vehicleRange = vehicleData?.range || params.vehicleRange || defaultSpecs.range;
-  const currentBatteryPercent =
-    vehicleData?.currentBatteryPercent || params.currentBatteryPercent || 80;
-  const batteryCapacity = vehicleData?.batteryCapacity || defaultSpecs.batteryCapacity;
+    // Use stored data or defaults
+    const defaultSpecs = getDefaultVehicleSpecs();
+    const vehicleRange = vehicleData?.range || params.vehicleRange || defaultSpecs.range;
+    const currentBatteryPercent =
+      vehicleData?.currentBatteryPercent || params.currentBatteryPercent || 80;
+    const batteryCapacity = vehicleData?.batteryCapacity || defaultSpecs.batteryCapacity;
 
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
+    // Step 1: Geocode the from/to addresses to get coordinates
+    const [fromResults, toResults] = await Promise.all([searchPlaces(from), searchPlaces(to)]);
 
-  // Mock route calculation
-  // In real implementation, this would call Mapbox/OpenRouteService API
-  const distance = Math.floor(Math.random() * 100) + 50; // 50-150km
-  const estimatedTime = Math.floor(distance / 60); // hours (assuming 60km/h avg)
+    if (!fromResults.length || !toResults.length) {
+      throw new Error('Could not find coordinates for addresses');
+    }
 
-  // Check if charging is needed using the smart logic
-  const requiresCharging = needsCharging(currentBatteryPercent, distance, vehicleRange, 20);
+    const fromCoords = {
+      latitude: parseFloat(fromResults[0].lat),
+      longitude: parseFloat(fromResults[0].lon),
+    };
+    const toCoords = {
+      latitude: parseFloat(toResults[0].lat),
+      longitude: parseFloat(toResults[0].lon),
+    };
 
-  // Calculate battery consumption for this trip
-  const batteryUsed = estimateBatteryConsumption(distance, batteryCapacity);
-  const batteryAfterTrip = currentBatteryPercent - batteryUsed;
+    // Step 2: Calculate route using OpenRouteService
+    const routeData = await calculateOpenRoute(fromCoords, toCoords);
+    const distance = routeData.distance; // in km
+    const estimatedTime = Math.round(routeData.duration / 60); // convert minutes to hours
 
-  // Log for debugging (will be visible in Expo)
-  if (__DEV__) {
-    console.warn('Route Calculation:', {
-      from,
-      to,
-      distance,
-      currentBattery: currentBatteryPercent,
-      batteryAfterTrip: batteryAfterTrip.toFixed(1),
-      requiresCharging,
-      vehicleRange,
-    });
-  }
+    // Step 3: Check if charging is needed
+    const requiresCharging = needsCharging(currentBatteryPercent, distance, vehicleRange, 20);
 
-  // Find optimal charging stations if needed
-  let suggestedStations: Station[] = [];
-  if (requiresCharging) {
-    // Strategy: Select stations based on:
-    // 1. Distance from start (prefer middle of route)
-    // 2. Charging speed (prefer fast chargers)
-    // 3. Availability (prefer stations with available chargers)
+    // Calculate battery consumption
+    const batteryUsed = estimateBatteryConsumption(distance, batteryCapacity);
+    const batteryAfterTrip = currentBatteryPercent - batteryUsed;
 
-    const sortedStations = MOCK_CHARGING_STATIONS.slice()
-      .filter(s => s.availableChargers > 0)
-      .sort((a, b) => {
-        // Prefer fast charging stations
-        const speedScore = (station: Station) => {
-          if (station.chargingSpeed.includes('Ultra')) return 3;
-          if (station.chargingSpeed.includes('Fast')) return 2;
-          return 1;
-        };
-        return speedScore(b) - speedScore(a);
+    // Log for debugging
+    if (__DEV__) {
+      console.warn('Route Calculation:', {
+        from,
+        to,
+        distance: `${distance.toFixed(1)} km`,
+        duration: `${estimatedTime}h ${Math.round(routeData.duration % 60)}m`,
+        currentBattery: `${currentBatteryPercent}%`,
+        batteryAfterTrip: `${batteryAfterTrip.toFixed(1)}%`,
+        requiresCharging,
+        vehicleRange: `${vehicleRange} km`,
+      });
+    }
+
+    // Step 4: Find charging stations if needed
+    let suggestedStations: Station[] = [];
+    if (requiresCharging) {
+      // Search for stations along the route
+      const chargingStations = await searchStationsAlongRoute(routeData.geometry, 15); // 15km corridor
+
+      // Filter for available and preferably fast chargers
+      const filteredStations = filterStations(chargingStations, {
+        onlyAvailable: true,
+        minPowerKW: 22, // At least Level 2 charging
       });
 
-    // Take top 2 stations for this route
-    suggestedStations = sortedStations.slice(0, 2);
+      // Convert to our Station format and take top 3
+      suggestedStations = filteredStations.slice(0, 3).map(convertToStation);
+
+      if (__DEV__) {
+        console.warn(`Found ${filteredStations.length} suitable charging stations`);
+      }
+    }
+
+    return {
+      id: `route-${Date.now()}`,
+      from,
+      to,
+      distance: Math.round(distance),
+      estimatedTime,
+      suggestedStations,
+    };
+  } catch (error) {
+    console.error('Error calculating route:', error);
+
+    // Fallback to mock data if APIs fail
+    if (__DEV__) {
+      console.warn('Using fallback mock route data due to error');
+    }
+
+    return {
+      id: `route-${Date.now()}`,
+      from,
+      to,
+      distance: 45,
+      estimatedTime: 1,
+      suggestedStations: FALLBACK_STATIONS.slice(0, 2),
+    };
+  }
+}
+
+/**
+ * Convert OpenChargeMap station to our Station format
+ */
+function convertToStation(ocmStation: ChargingStation): Station {
+  // Determine charging speed category
+  let chargingSpeed = 'Standard (22kW)';
+  if (ocmStation.powerKW) {
+    if (ocmStation.powerKW >= 150) {
+      chargingSpeed = `Ultra Fast (${ocmStation.powerKW}kW)`;
+    } else if (ocmStation.powerKW >= 50) {
+      chargingSpeed = `Fast (${ocmStation.powerKW}kW)`;
+    } else {
+      chargingSpeed = `Standard (${ocmStation.powerKW}kW)`;
+    }
   }
 
+  // Estimate available/total chargers
+  const totalChargers = ocmStation.numberOfPoints || 2;
+  const availableChargers = ocmStation.isAvailable ? Math.max(1, Math.floor(totalChargers / 2)) : 0;
+
   return {
-    id: `route-${Date.now()}`,
-    from,
-    to,
-    distance,
-    estimatedTime,
-    suggestedStations,
+    id: ocmStation.id.toString(),
+    name: ocmStation.name,
+    address: ocmStation.address,
+    latitude: ocmStation.latitude,
+    longitude: ocmStation.longitude,
+    availableChargers,
+    totalChargers,
+    chargingSpeed,
+    pricePerKwh: 15.0, // Default price - OpenChargeMap doesn't always have this
+    amenities: ['Restroom', 'WiFi'], // Generic amenities
+    rating: 4.0, // Default rating
   };
 }
 
 /**
- * Get all charging stations in Metro Manila
- * Will integrate with OpenChargeMap API later
+ * Get nearby charging stations using OpenChargeMap
  */
 export async function getNearbyChargingStations(
   latitude: number,
   longitude: number,
   radiusKm: number = 10
 ): Promise<Station[]> {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-
-  // Filter stations within radius (simple distance calculation)
-  return MOCK_CHARGING_STATIONS.filter(station => {
-    const distance = calculateDistance(latitude, longitude, station.latitude, station.longitude);
-    return distance <= radiusKm;
-  });
+  try {
+    const stations = await searchStationsNearPoint(latitude, longitude, radiusKm, 20);
+    return stations.map(convertToStation);
+  } catch (error) {
+    console.error('Error fetching nearby stations:', error);
+    return FALLBACK_STATIONS;
+  }
 }
 
 /**
- * Calculate distance between two coordinates (Haversine formula)
+ * Get station details by ID (searches OpenChargeMap)
  */
-function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371; // Earth's radius in km
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
+export async function getStationById(stationId: string): Promise<Station | undefined> {
+  try {
+    // For now, search near Manila and filter by ID
+    // In production, you'd want a direct station lookup endpoint
+    const stations = await searchStationsNearPoint(14.5995, 120.9842, 50, 100);
+    const found = stations.find(s => s.id.toString() === stationId);
+    return found ? convertToStation(found) : undefined;
+  } catch (error) {
+    console.error('Error fetching station:', error);
+    return FALLBACK_STATIONS.find(s => s.id === stationId);
+  }
 }
 
 /**
- * Get station details by ID
- */
-export function getStationById(stationId: string): Station | undefined {
-  return MOCK_CHARGING_STATIONS.find(station => station.id === stationId);
-}
-
-/**
- * Get all available stations (for testing/development)
+ * Get all available stations (returns fallback for compatibility)
  */
 export function getAllStations(): Station[] {
-  return MOCK_CHARGING_STATIONS;
+  return FALLBACK_STATIONS;
 }

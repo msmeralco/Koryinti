@@ -12,9 +12,34 @@ export default function ConfirmPaymentScreen({ navigation, route }: Props) {
   const { reservationDetails } = route.params;
 
   const handleConfirmPayment = () => {
+    // Create a mock EnrichedStation since we only have stationId
+    // In a real app, you would fetch the full station details from API
+    const mockStation = {
+      id: reservationDetails.stationId,
+      title: 'Charging Station',
+      address: 'Address not available',
+      latitude: 0,
+      longitude: 0,
+      totalPlugs: 4,
+      plugsInUse: 1,
+      availablePlugs: 3,
+      plugTypes: ['Type 2', 'CCS'],
+      powerKW: 50,
+      distanceKm: 0,
+      driveMinutes: 0,
+      rating: 4.5,
+      pricePerKWh: reservationDetails.estimatedCost / reservationDetails.duration / 20,
+      amenities: {
+        wifi: true,
+        bathroom: true,
+        pwdFriendly: true,
+        waitingLounge: true,
+      },
+      state: '',
+    };
     navigation.navigate('ReservationDetails', {
       routeId: 'mock-route-id',
-      stations: [reservationDetails.stationId],
+      stations: [mockStation],
     });
   };
 

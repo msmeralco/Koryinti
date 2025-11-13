@@ -3,7 +3,7 @@ import { StyleSheet, Image, Pressable, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/types/navigation';
 
-// adjust the path if needed based on your folder structure
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const welcomeLogo = require('../../../assets/welcomelogo.png');
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Registration'>;

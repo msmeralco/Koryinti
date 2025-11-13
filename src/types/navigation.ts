@@ -18,7 +18,7 @@ export type MapStackParamList = {
   ReserveStation: { stationId: string };
   ConfirmPayment: { stationId: string; reservationDetails: ReservationDetails };
   PlanTrip: undefined;
-  TripRoute: { from: string; to: string };
+  TripRoute: { from: string; to: string; currentBatteryPercent?: number };
   ReservationDetails: { routeId: string; stations: EnrichedStation[] };
   ScanQR: { reservationId: string };
   Rating: { stationId: string; reservationId: string };
@@ -46,7 +46,7 @@ export interface EnrichedStation {
     waitingLounge: boolean;
   };
   state: string;
-};
+}
 
 export interface Station {
   id: string;
@@ -60,6 +60,7 @@ export interface Station {
   pricePerKwh: number;
   amenities: string[];
   rating: number;
+  powerKW?: number; // Charging power in kW
 }
 
 export interface ReservationDetails {

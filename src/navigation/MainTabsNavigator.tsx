@@ -24,6 +24,37 @@ import {
 } from '@expo/vector-icons';
 
 const Tab = createBottomTabNavigator<MainTabsParamList>();
+/**
+ * MainTabsNavigator provides the primary bottom tab navigation
+ * for the main sections of the app after user registration/login
+ */
+
+const TAB_BAR_BG = '#050608';
+const ACTIVE_PILL = '#4CAF50';
+const ACTIVE_TEXT = '#FFFFFF';
+const INACTIVE_ICON = 'rgba(255,255,255,0.8)';
+
+function TabItem({
+  focused,
+  label,
+  IconComponent,
+  iconName,
+}: {
+  focused: boolean;
+  label: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  IconComponent: any;
+  iconName: string;
+}) {
+  if (focused) {
+    return (
+      <View style={styles.tabWrapper}>
+        <View style={styles.pill}>
+          <IconComponent name={iconName} size={22} color={ACTIVE_TEXT} />
+          <Text style={styles.pillLabel}>{label}</Text>
+        </View>
+      </View>
+    );
 
 // ---------- helpers ----------
 const getLabel = (name: string) =>
@@ -218,6 +249,48 @@ export default function MainTabsNavigator() {
       screenOptions={{ headerShown: false }}
       tabBar={(props) => <AnimatedTabBar {...props} />}
     >
+      {/* HOME (MapNavigator) */}
+      <Tab.Screen
+        name="Map"
+        component={MapNavigator}
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <TabItem
+              focused={focused}
+              label="Home"
+              IconComponent={Ionicons}
+              iconName="home-outline"
+            />
+          ),
+        }}
+      />
+
+      {/* SESSIONS (ReservationsScreen) */}
+      <Tab.Screen
+        name="Reservations"
+        component={ReservationsScreen}
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <TabItem
+              focused={focused}
+              label="Sessions"
+              IconComponent={MaterialCommunityIcons}
+              iconName="clipboard-text-outline"
+            />
+          ),
+        }}
+      />
+
+      {/* PROFILE */}
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <TabItem focused={focused} label="Profile" IconComponent={Feather} iconName="user" />
+          ),
+        }}
+      />
       <Tab.Screen name="Map" component={MapNavigator} />
       <Tab.Screen name="Reservations" component={ReservationsScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
