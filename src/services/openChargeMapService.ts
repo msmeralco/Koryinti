@@ -104,6 +104,7 @@ export async function searchStationsAlongRoute(
 /**
  * Parse OpenChargeMap API response into our ChargingStation format
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parseStations(data: any[]): ChargingStation[] {
   return data.map(poi => {
     const addressInfo = poi.AddressInfo || {};
@@ -115,6 +116,7 @@ function parseStations(data: any[]): ChargingStation[] {
     let maxPowerKW = 0;
     const connectorTypes: string[] = [];
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     connections.forEach((conn: any) => {
       if (conn.PowerKW && conn.PowerKW > maxPowerKW) {
         maxPowerKW = conn.PowerKW;
@@ -151,6 +153,7 @@ function parseStations(data: any[]): ChargingStation[] {
 /**
  * Format address from OpenChargeMap address info
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function formatAddress(addressInfo: any): string {
   const parts = [
     addressInfo.AddressLine1,
