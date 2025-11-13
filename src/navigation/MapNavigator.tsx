@@ -22,6 +22,7 @@ const Stack = createNativeStackNavigator<MapStackParamList>();
  * - Scanning QR codes for charging
  * - Rating stations after use
  */
+
 export default function MapNavigator() {
   return (
     <Stack.Navigator

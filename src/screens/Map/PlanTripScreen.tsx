@@ -7,12 +7,16 @@ import {
   FlatList,
   ActivityIndicator,
   Keyboard,
+  Alert,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MapStackParamList } from '@/types/navigation';
 import { useState, useEffect } from 'react';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps'; /** this is the map part */
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { searchPlaces, formatDisplayName, GeocodingResult } from '@/services/geocodingService';
+import * as Location from 'expo-location';
+import { getNearbyChargingStations } from '@/services/routeService';
+import { Station } from '@/types/navigation';
 
 type Props = NativeStackScreenProps<MapStackParamList, 'PlanTrip'>;
 
@@ -29,14 +33,70 @@ export default function PlanTripScreen({ navigation }: Props) {
   const [searchingFrom, setSearchingFrom] = useState(false);
   const [searchingTo, setSearchingTo] = useState(false);
   const [activeField, setActiveField] = useState<'from' | 'to' | null>(null);
+  const [gettingLocation, setGettingLocation] = useState(false);
+  const [nearbyStations, setNearbyStations] = useState<Station[]>([]);
 
-  // Default map region (Central Manila, Metro Manila, Philippines)
-  const [region] = useState({
+  // Map region - will update to user's location
+  const [region, setRegion] = useState({
     latitude: 14.5995,
     longitude: 120.9842,
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
   });
+
+  // Load nearby charging stations when component mounts or region changes
+  useEffect(() => {
+    const loadStations = async () => {
+      try {
+        const stations = await getNearbyChargingStations(region.latitude, region.longitude, 20);
+        setNearbyStations(stations);
+      } catch (error) {
+        console.error('Error loading nearby stations:', error);
+      }
+    };
+    loadStations();
+  }, [region.latitude, region.longitude]);
+
+  // Get user's current location
+  const getCurrentLocation = async (field: 'from' | 'to') => {
+    setGettingLocation(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Location permission is required to use current location');
+        setGettingLocation(false);
+        return;
+      }
+
+      const location = await Location.getCurrentPositionAsync({});
+      const { latitude, longitude } = location.coords;
+
+      // Update map region to user's location
+      setRegion({
+        latitude,
+        longitude,
+        latitudeDelta: 0.0922,
+        longitudeDelta: 0.0421,
+      });
+
+      // Use reverse geocoding to get address name
+      const address = `Current Location (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
+
+      if (field === 'from') {
+        setFrom(address);
+        setFromSuggestions([]);
+      } else {
+        setTo(address);
+        setToSuggestions([]);
+      }
+      setActiveField(null);
+    } catch (error) {
+      console.error('Error getting location:', error);
+      Alert.alert('Error', 'Could not get current location');
+    } finally {
+      setGettingLocation(false);
+    }
+  };
 
   // Debounced search for "From" field
   useEffect(() => {
@@ -94,26 +154,42 @@ export default function PlanTripScreen({ navigation }: Props) {
       <MapView
         style={styles.map}
         initialRegion={region}
+        region={region}
         provider={PROVIDER_GOOGLE}
         showsUserLocation
         showsMyLocationButton
       >
-        {/* Example marker - Central Manila */}
-        <Marker
-          coordinate={{
-            latitude: 14.5995,
-            longitude: 120.9842,
-          }}
-          title="Central Manila"
-          description="Metro Manila, Philippines"
-        />
+        {/* Show nearby EV charging stations */}
+        {nearbyStations.map(station => (
+          <Marker
+            key={station.id}
+            coordinate={{
+              latitude: station.latitude,
+              longitude: station.longitude,
+            }}
+            title={station.name}
+            description={`${station.chargingSpeed} • ${station.availableChargers}/${station.totalChargers} available`}
+            pinColor="#4CAF50"
+          />
+        ))}
       </MapView>
 
       <View style={styles.inputContainer}>
         <Text style={styles.title}>Plan Your Trip</Text>
 
         <View style={styles.inputWrapper}>
-          <Text style={styles.inputLabel}>From</Text>
+          <View style={styles.labelRow}>
+            <Text style={styles.inputLabel}>From</Text>
+            <TouchableOpacity
+              style={styles.locationButton}
+              onPress={() => getCurrentLocation('from')}
+              disabled={gettingLocation}
+            >
+              <Text style={styles.locationButtonText}>
+                {gettingLocation ? '📍 Getting...' : '📍 Current Location'}
+              </Text>
+            </TouchableOpacity>
+          </View>
           <TextInput
             style={styles.input}
             placeholder="Search: SM Mall of Asia, Makati, etc."
@@ -151,7 +227,18 @@ export default function PlanTripScreen({ navigation }: Props) {
         </View>
 
         <View style={styles.inputWrapper}>
-          <Text style={styles.inputLabel}>To</Text>
+          <View style={styles.labelRow}>
+            <Text style={styles.inputLabel}>To</Text>
+            <TouchableOpacity
+              style={styles.locationButton}
+              onPress={() => getCurrentLocation('to')}
+              disabled={gettingLocation}
+            >
+              <Text style={styles.locationButtonText}>
+                {gettingLocation ? '📍 Getting...' : '📍 Current Location'}
+              </Text>
+            </TouchableOpacity>
+          </View>
           <TextInput
             style={styles.input}
             placeholder="Search destination..."
@@ -229,10 +316,24 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     position: 'relative',
   },
+  labelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
   inputLabel: {
     fontSize: 14,
     color: '#666',
-    marginBottom: 5,
+    fontWeight: '600',
+  },
+  locationButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  locationButtonText: {
+    fontSize: 12,
+    color: '#4CAF50',
     fontWeight: '600',
   },
   input: {

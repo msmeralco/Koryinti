@@ -7,10 +7,10 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { MapStackParamList, Route } from '@/types/navigation';
+import { MapStackParamList, Route, Station } from '@/types/navigation';
 import { useState, useEffect } from 'react';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
-import { calculateRoute } from '@/services/routeService';
+import { calculateRoute, getNearbyChargingStations } from '@/services/routeService';
 
 type Props = NativeStackScreenProps<MapStackParamList, 'TripRoute'>;
 
@@ -23,6 +23,7 @@ export default function TripRouteScreen({ navigation, route }: Props) {
   const { from, to } = route.params;
   const [calculatedRoute, setCalculatedRoute] = useState<Route | null>(null);
   const [loading, setLoading] = useState(true);
+  const [nearbyStations, setNearbyStations] = useState<Station[]>([]);
 
   // Map region centered on Manila
   const [region] = useState({
@@ -39,6 +40,10 @@ export default function TripRouteScreen({ navigation, route }: Props) {
       try {
         const result = await calculateRoute({ from, to });
         setCalculatedRoute(result);
+
+        // Load nearby stations in the background
+        const stations = await getNearbyChargingStations(region.latitude, region.longitude, 30);
+        setNearbyStations(stations);
       } catch (error) {
         console.error('Error calculating route:', error);
       } finally {
@@ -47,7 +52,7 @@ export default function TripRouteScreen({ navigation, route }: Props) {
     };
 
     fetchRoute();
-  }, [from, to]);
+  }, [from, to, region.latitude, region.longitude]);
 
   const handleReserveChargers = () => {
     if (calculatedRoute) {
@@ -84,7 +89,26 @@ export default function TripRouteScreen({ navigation, route }: Props) {
         provider={PROVIDER_GOOGLE}
         showsUserLocation
       >
-        {/* Markers for charging stations */}
+        {/* Show all nearby EV charging stations (gray markers) */}
+        {nearbyStations
+          .filter(
+            station =>
+              !calculatedRoute.suggestedStations.some(suggested => suggested.id === station.id)
+          )
+          .map(station => (
+            <Marker
+              key={`nearby-${station.id}`}
+              coordinate={{
+                latitude: station.latitude,
+                longitude: station.longitude,
+              }}
+              title={station.name}
+              description={`${station.chargingSpeed} • ${station.availableChargers}/${station.totalChargers} available`}
+              pinColor="#9E9E9E"
+            />
+          ))}
+
+        {/* Markers for suggested charging stations (green markers) */}
         {calculatedRoute.suggestedStations.map(station => (
           <Marker
             key={station.id}

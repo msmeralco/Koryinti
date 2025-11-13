@@ -12,6 +12,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'AddVehicle'>;
  * For MVP, this is a simplified form without full validation.
  * Users can proceed to the main app after adding basic vehicle info.
  */
+
 export default function AddVehicleScreen({ navigation }: Props) {
   const [make, setMake] = useState('');
   const [model, setModel] = useState('');
