@@ -21,6 +21,7 @@ import * as Location from 'expo-location';
 import { getNearbyChargingStations } from '@/services/routeService';
 import { Station } from '@/types/navigation';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { calculateDetailedRoute } from '@/services/routeCalculationEngine';
 
 type Props = NativeStackScreenProps<MapStackParamList, 'PlanTrip'>;
 
@@ -137,15 +138,98 @@ export default function PlanTripScreen({ navigation }: Props) {
     return () => clearTimeout(timer);
   }, [to, activeField]);
 
-  const handlePlanRoute = () => {
+  const handlePlanRoute = async () => {
     if (from && to) {
       Keyboard.dismiss();
-      navigation.navigate('TripRoute', {
-        from,
-        to,
-        currentBatteryPercent: batteryPercent,
-        minimumArrivalBattery: minArrivalBattery,
-      });
+
+      // Show loading state
+      Alert.alert('Calculating Route', 'Please wait while we plan your trip...');
+
+      try {
+        // Pre-validate the route to check if it's possible
+        const result = await calculateDetailedRoute({
+          from,
+          to,
+          currentBatteryPercent: batteryPercent,
+          minimumArrivalBattery: minArrivalBattery,
+        });
+
+        // Check if route calculation failed
+        if (!result.success || !result.route) {
+          Alert.alert(
+            '❌ Route Calculation Failed',
+            result.error || 'Unable to calculate route. Please try again.',
+            [{ text: 'OK', style: 'default' }]
+          );
+          return;
+        }
+
+        const detailedRoute = result.route;
+
+        // Check if the trip is impossible
+        // Impossible conditions:
+        // 1. Final battery at destination is 0% or negative
+        // 2. Any segment has batteryAtArrival <= 0 (would run out mid-trip)
+
+        if (detailedRoute.finalBattery <= 0) {
+          Alert.alert(
+            '⚠️ Impossible Trip',
+            `This trip cannot be completed with your current battery (${batteryPercent}%).\n\n` +
+              `Even with available charging stations, your battery would reach 0% at the destination.\n\n` +
+              `💡 Suggestions:\n` +
+              `• Start with a higher battery percentage\n` +
+              `• Choose a closer destination\n` +
+              `• Lower your minimum arrival battery requirement (currently ${minArrivalBattery}%)`,
+            [{ text: 'OK', style: 'default' }]
+          );
+          return;
+        }
+
+        // Check if battery would run out during any segment
+        let wouldRunOut = false;
+        let criticalSegment = null;
+        for (const segment of detailedRoute.segments) {
+          if (segment.batteryAtArrival <= 0) {
+            wouldRunOut = true;
+            criticalSegment = segment;
+            break;
+          }
+        }
+
+        if (wouldRunOut) {
+          const segmentInfo = criticalSegment
+            ? `\n\nYour battery would be depleted before reaching: ${criticalSegment.location}`
+            : '';
+
+          Alert.alert(
+            '⚠️ Impossible Trip',
+            `Your EV would run out of battery during this trip.${segmentInfo}\n\n` +
+              `The distance is too far and there are insufficient charging stations along the route.\n\n` +
+              `💡 Suggestions:\n` +
+              `• Start with a higher battery percentage (currently ${batteryPercent}%)\n` +
+              `• Plan a shorter trip\n` +
+              `• Lower your minimum arrival battery requirement (currently ${minArrivalBattery}%)`,
+            [{ text: 'OK', style: 'default' }]
+          );
+          return;
+        }
+
+        // Trip is possible - navigate to TripRouteScreen
+        navigation.navigate('TripRoute', {
+          from,
+          to,
+          currentBatteryPercent: batteryPercent,
+          minimumArrivalBattery: minArrivalBattery,
+        });
+      } catch (error: any) {
+        console.error('Error validating route:', error);
+        Alert.alert(
+          '❌ Route Calculation Failed',
+          error.message ||
+            'Unable to calculate route. Please check your internet connection and try again.',
+          [{ text: 'OK', style: 'default' }]
+        );
+      }
     }
   };
 
