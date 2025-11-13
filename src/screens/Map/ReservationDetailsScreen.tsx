@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { MapStackParamList, EnrichedStation } from '@/types/navigation';
+import { MapStackParamList } from '@/types/navigation';
 
 type Props = NativeStackScreenProps<MapStackParamList, 'ReservationDetails'>;
 
@@ -10,7 +10,7 @@ type Props = NativeStackScreenProps<MapStackParamList, 'ReservationDetails'>;
  * with options to scan QR code, cancel, or report issues.
  */
 export default function ReservationDetailsScreen({ navigation, route }: Props) {
-  const { stations, routeId } = route.params;
+  const { stations } = route.params;
 
   // Synthetic assumption: each stop consumes 20 kWh.
   const energyPerStopKWh = 20;
@@ -58,22 +58,48 @@ export default function ReservationDetailsScreen({ navigation, route }: Props) {
         <Text style={styles.sectionTitle}>Trip Stations</Text>
         {stations.map(station => (
           <View key={station.id} style={styles.stationCard}>
-            <View style={{flex:1}}>
+            <View style={{ flex: 1 }}>
               <Text style={styles.stationName}>{station.title}</Text>
               <Text style={styles.stationAddress}>{station.address}</Text>
-              <Text style={styles.stationInfo}>Distance: {station.distanceKm.toFixed(1)} km • {station.driveMinutes.toFixed(0)} min drive</Text>
-              <Text style={styles.stationInfo}>Plugs: {station.availablePlugs}/{station.totalPlugs} available (In use: {station.plugsInUse})</Text>
-              <Text style={styles.stationInfo}>Power: {station.powerKW.toFixed(0)} kW • Types: {station.plugTypes.join(', ') || 'N/A'}</Text>
-              <Text style={styles.stationInfo}>Amenities: {['WiFi','Bathroom','PWD','Lounge'].filter((_,i)=>[station.amenities.wifi,station.amenities.bathroom,station.amenities.pwdFriendly,station.amenities.waitingLounge][i]).join(', ') || 'None'}</Text>
+              <Text style={styles.stationInfo}>
+                Distance: {station.distanceKm.toFixed(1)} km • {station.driveMinutes.toFixed(0)} min
+                drive
+              </Text>
+              <Text style={styles.stationInfo}>
+                Plugs: {station.availablePlugs}/{station.totalPlugs} available (In use:{' '}
+                {station.plugsInUse})
+              </Text>
+              <Text style={styles.stationInfo}>
+                Power: {station.powerKW.toFixed(0)} kW • Types:{' '}
+                {station.plugTypes.join(', ') || 'N/A'}
+              </Text>
+              <Text style={styles.stationInfo}>
+                Amenities:{' '}
+                {['WiFi', 'Bathroom', 'PWD', 'Lounge']
+                  .filter(
+                    (_, i) =>
+                      [
+                        station.amenities.wifi,
+                        station.amenities.bathroom,
+                        station.amenities.pwdFriendly,
+                        station.amenities.waitingLounge,
+                      ][i]
+                  )
+                  .join(', ') || 'None'}
+              </Text>
               <Text style={styles.stationInfo}>Rating: ⭐ {station.rating.toFixed(1)}</Text>
-              <Text style={styles.stationInfo}>Est. Stop Cost: ₱{(station.pricePerKWh * energyPerStopKWh).toFixed(2)}</Text>
+              <Text style={styles.stationInfo}>
+                Est. Stop Cost: ₱{(station.pricePerKWh * energyPerStopKWh).toFixed(2)}
+              </Text>
             </View>
             <TouchableOpacity
-              style={[styles.reserveBtn, station.availablePlugs===0 && styles.reserveBtnDisabled]}
-              disabled={station.availablePlugs===0}
+              style={[styles.reserveBtn, station.availablePlugs === 0 && styles.reserveBtnDisabled]}
+              disabled={station.availablePlugs === 0}
               onPress={() => navigation.navigate('ReserveStation', { stationId: station.id })}
             >
-              <Text style={styles.reserveBtnText}>{station.availablePlugs===0 ? 'Full' : 'Reserve'}</Text>
+              <Text style={styles.reserveBtnText}>
+                {station.availablePlugs === 0 ? 'Full' : 'Reserve'}
+              </Text>
             </TouchableOpacity>
           </View>
         ))}

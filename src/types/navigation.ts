@@ -45,7 +45,7 @@ export interface EnrichedStation {
     waitingLounge: boolean;
   };
   state: string;
-};
+}
 
 export interface Station {
   id: string;

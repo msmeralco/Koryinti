@@ -150,12 +150,7 @@ export default function AddVehicleScreen({ navigation }: Props) {
                 style={styles.dropdown}
                 onPress={openBrandModal}
               >
-                <Text
-                  style={[
-                    styles.dropdownText,
-                    !brand && { color: '#6B6D74' },
-                  ]}
-                >
+                <Text style={[styles.dropdownText, !brand && { color: '#6B6D74' }]}>
                   {brand || 'Select Brand'}
                 </Text>
                 <Ionicons name="chevron-down" size={18} color="#A0A2AA" />
@@ -167,18 +162,10 @@ export default function AddVehicleScreen({ navigation }: Props) {
               <Text style={styles.label}>Model</Text>
               <TouchableOpacity
                 activeOpacity={brandId ? 0.8 : 1}
-                style={[
-                  styles.dropdown,
-                  !brandId && { opacity: 0.5 },
-                ]}
+                style={[styles.dropdown, !brandId && { opacity: 0.5 }]}
                 onPress={openModelModal}
               >
-                <Text
-                  style={[
-                    styles.dropdownText,
-                    !model && { color: '#6B6D74' },
-                  ]}
-                >
+                <Text style={[styles.dropdownText, !model && { color: '#6B6D74' }]}>
                   {model || 'Select Model'}
                 </Text>
                 <Ionicons name="chevron-down" size={18} color="#A0A2AA" />
@@ -190,7 +177,7 @@ export default function AddVehicleScreen({ navigation }: Props) {
               <Text style={styles.label}>Plug Type</Text>
 
               <View style={styles.plugGrid}>
-                {PLUG_TYPES.map((plug) => {
+                {PLUG_TYPES.map(plug => {
                   const isSelected = selectedPlug === plug.id;
                   return (
                     <TouchableOpacity
@@ -200,24 +187,15 @@ export default function AddVehicleScreen({ navigation }: Props) {
                       activeOpacity={0.85}
                     >
                       <MaterialCommunityIcons
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         name={plug.icon as any}
                         size={32}
                         color={isSelected ? '#0C1710' : '#D3D4DB'}
                       />
-                      <Text
-                        style={[
-                          styles.plugLabel,
-                          isSelected && styles.plugLabelSelected,
-                        ]}
-                      >
+                      <Text style={[styles.plugLabel, isSelected && styles.plugLabelSelected]}>
                         {plug.label}
                       </Text>
-                      <Text
-                        style={[
-                          styles.plugRegion,
-                          isSelected && styles.plugRegionSelected,
-                        ]}
-                      >
+                      <Text style={[styles.plugRegion, isSelected && styles.plugRegionSelected]}>
                         {plug.region}
                       </Text>
                     </TouchableOpacity>
@@ -229,126 +207,8 @@ export default function AddVehicleScreen({ navigation }: Props) {
         </ScrollView>
 
         {/* Submit */}
-        <TouchableOpacity
-          style={styles.submitButton}
-          onPress={handleSubmit}
-          activeOpacity={0.9}
-        >
+        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} activeOpacity={0.9}>
           <Text style={styles.submitText}>Submit</Text>
-=======
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '@/types/navigation';
-import { useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { findVehicleSpecs, getDefaultVehicleSpecs } from '@/services/vehicleDatabase';
-
-type Props = NativeStackScreenProps<RootStackParamList, 'AddVehicle'>;
-
-/**
- * AddVehicleScreen allows users to add their vehicle information.
- * For MVP, this is a simplified form without full validation.
- * Users can proceed to the main app after adding basic vehicle info.
- */
-
-export default function AddVehicleScreen({ navigation }: Props) {
-  const [make, setMake] = useState('');
-  const [model, setModel] = useState('');
-  const [year, setYear] = useState('');
-  const [batteryPercent, setBatteryPercent] = useState('80');
-  const [detectedSpecs, setDetectedSpecs] = useState<string>('');
-
-  const handleContinue = async () => {
-    // Find vehicle specs from database
-    const specs = findVehicleSpecs(make, model) || getDefaultVehicleSpecs();
-
-    // Save vehicle data to AsyncStorage
-    const vehicleData = {
-      make: make || 'Unknown',
-      model: model || 'Unknown',
-      year: year || '2023',
-      batteryCapacity: specs.batteryCapacity,
-      range: specs.range,
-      currentBatteryPercent: parseInt(batteryPercent) || 80,
-      chargingSpeed: specs.chargingSpeed,
-    };
-
-    await AsyncStorage.setItem('vehicleData', JSON.stringify(vehicleData));
-    navigation.navigate('MainTabs');
-  };
-
-  // Auto-detect vehicle specs when make/model changes
-  const handleMakeChange = (text: string) => {
-    setMake(text);
-    updateDetectedSpecs(text, model);
-  };
-
-  const handleModelChange = (text: string) => {
-    setModel(text);
-    updateDetectedSpecs(make, text);
-  };
-
-  const updateDetectedSpecs = (vehicleMake: string, vehicleModel: string) => {
-    if (vehicleMake && vehicleModel) {
-      const specs = findVehicleSpecs(vehicleMake, vehicleModel);
-      if (specs) {
-        setDetectedSpecs(`✓ Found: ${specs.range}km range, ${specs.batteryCapacity}kWh battery`);
-      } else {
-        setDetectedSpecs('Using default specs (400km range, 60kWh)');
-      }
-    } else {
-      setDetectedSpecs('');
-    }
-  };
-
-  return (
-    <ScrollView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Add Your Vehicle</Text>
-        <Text style={styles.subtitle}>Tell us about your electric vehicle</Text>
-
-        <TextInput
-          style={styles.input}
-          placeholder="Make (e.g., Tesla, BYD, Nissan)"
-          value={make}
-          onChangeText={handleMakeChange}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Model (e.g., Model 3, Atto 3, Leaf)"
-          value={model}
-          onChangeText={handleModelChange}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Year (e.g., 2023)"
-          value={year}
-          onChangeText={setYear}
-          keyboardType="numeric"
-        />
-
-        {detectedSpecs !== '' && (
-          <View style={styles.specsBox}>
-            <Text style={styles.specsText}>{detectedSpecs}</Text>
-          </View>
-        )}
-
-        <Text style={styles.label}>Current Battery Level</Text>
-        <View style={styles.batteryContainer}>
-          <TextInput
-            style={styles.batteryInput}
-            value={batteryPercent}
-            onChangeText={setBatteryPercent}
-            keyboardType="numeric"
-            maxLength={3}
-          />
-          <Text style={styles.percentText}>%</Text>
-        </View>
-        <Text style={styles.helperText}>This helps us suggest optimal charging stops</Text>
-
-        <TouchableOpacity style={styles.button} onPress={handleContinue}>
-          <Text style={styles.buttonText}>Continue</Text>
->>>>>>> 2cf54f0d9f7e39a013590575178eb5e77b0247f4
         </TouchableOpacity>
 
         {/* Brand Modal */}
@@ -361,7 +221,7 @@ export default function AddVehicleScreen({ navigation }: Props) {
           <View style={styles.modalBackdrop}>
             <View style={styles.modalContainer}>
               <Text style={styles.modalTitle}>Select Brand</Text>
-              {EV_BRANDS.map((b) => (
+              {EV_BRANDS.map(b => (
                 <TouchableOpacity
                   key={b.id}
                   style={styles.modalItem}
@@ -391,7 +251,7 @@ export default function AddVehicleScreen({ navigation }: Props) {
           <View style={styles.modalBackdrop}>
             <View style={styles.modalContainer}>
               <Text style={styles.modalTitle}>Select Model</Text>
-              {modelsForBrand.map((m) => (
+              {modelsForBrand.map(m => (
                 <TouchableOpacity
                   key={m}
                   style={styles.modalItem}
@@ -411,7 +271,8 @@ export default function AddVehicleScreen({ navigation }: Props) {
           </View>
         </Modal>
       </View>
-    </SafeAreaView>  );
+    </SafeAreaView>
+  );
 }
 
 const GREEN = '#78FF9F';
@@ -519,7 +380,8 @@ const styles = StyleSheet.create({
   },
   plugGrid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',    marginTop: 10,
+    flexWrap: 'wrap',
+    marginTop: 10,
     justifyContent: 'space-between',
   },
   plugCard: {

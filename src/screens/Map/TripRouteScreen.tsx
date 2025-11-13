@@ -56,10 +56,29 @@ export default function TripRouteScreen({ navigation, route }: Props) {
 
   const handleReserveChargers = () => {
     if (calculatedRoute) {
-      const stationIds = calculatedRoute.suggestedStations.map(s => s.id);
+      // Convert Station[] to EnrichedStation[] format expected by navigation
+      const enrichedStations = calculatedRoute.suggestedStations.map(s => ({
+        ...s,
+        title: s.name,
+        totalPlugs: s.totalChargers,
+        plugsInUse: s.totalChargers - s.availableChargers,
+        availablePlugs: s.availableChargers,
+        plugTypes: s.amenities,
+        powerKW: parseFloat(s.chargingSpeed) || 0,
+        distanceKm: 0,
+        driveMinutes: 0,
+        pricePerKWh: s.pricePerKwh,
+        amenities: {
+          wifi: s.amenities.includes('WiFi'),
+          bathroom: s.amenities.includes('Bathroom'),
+          pwdFriendly: s.amenities.includes('PWD Friendly'),
+          waitingLounge: s.amenities.includes('Waiting Lounge'),
+        },
+        state: '',
+      }));
       navigation.navigate('ReservationDetails', {
         routeId: calculatedRoute.id,
-        stations: stationIds,
+        stations: enrichedStations,
       });
     }
   };
@@ -162,27 +181,51 @@ export default function TripRouteScreen({ navigation, route }: Props) {
           {calculatedRoute.suggestedStations.length > 0 ? (
             <>
               <Text style={styles.sectionTitle}>Recommended Charging Stops</Text>
-              {calculatedRoute.suggestedStations.map((station, index) => (
-                <TouchableOpacity
-                  key={station.id}
-                  style={styles.stationCard}
-                  onPress={() => navigation.navigate('StationProfile', { stationId: station.id })}
-                >
-                  <View style={styles.stationNumber}>
-                    <Text style={styles.stationNumberText}>{index + 1}</Text>
-                  </View>
-                  <View style={styles.stationInfo}>
-                    <Text style={styles.stationName}>{station.name}</Text>
-                    <Text style={styles.stationDetail}>{station.address}</Text>
-                    <Text style={styles.stationDetail}>
-                      {station.chargingSpeed} • ₱{station.pricePerKwh}/kWh • ⭐ {station.rating}
-                    </Text>
-                    <Text style={styles.stationAvailability}>
-                      {station.availableChargers}/{station.totalChargers} available
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
+              {calculatedRoute.suggestedStations.map((station, index) => {
+                // Convert Station to EnrichedStation for navigation
+                const enrichedStation = {
+                  ...station,
+                  title: station.name,
+                  totalPlugs: station.totalChargers,
+                  plugsInUse: station.totalChargers - station.availableChargers,
+                  availablePlugs: station.availableChargers,
+                  plugTypes: station.amenities,
+                  powerKW: parseFloat(station.chargingSpeed) || 0,
+                  distanceKm: 0,
+                  driveMinutes: 0,
+                  pricePerKWh: station.pricePerKwh,
+                  amenities: {
+                    wifi: station.amenities.includes('WiFi'),
+                    bathroom: station.amenities.includes('Bathroom'),
+                    pwdFriendly: station.amenities.includes('PWD Friendly'),
+                    waitingLounge: station.amenities.includes('Waiting Lounge'),
+                  },
+                  state: '',
+                };
+                return (
+                  <TouchableOpacity
+                    key={station.id}
+                    style={styles.stationCard}
+                    onPress={() =>
+                      navigation.navigate('StationProfile', { station: enrichedStation })
+                    }
+                  >
+                    <View style={styles.stationNumber}>
+                      <Text style={styles.stationNumberText}>{index + 1}</Text>
+                    </View>
+                    <View style={styles.stationInfo}>
+                      <Text style={styles.stationName}>{station.name}</Text>
+                      <Text style={styles.stationDetail}>{station.address}</Text>
+                      <Text style={styles.stationDetail}>
+                        {station.chargingSpeed} • ₱{station.pricePerKwh}/kWh • ⭐ {station.rating}
+                      </Text>
+                      <Text style={styles.stationAvailability}>
+                        {station.availableChargers}/{station.totalChargers} available
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
 
               <TouchableOpacity style={styles.reserveButton} onPress={handleReserveChargers}>
                 <Text style={styles.reserveButtonText}>Reserve Chargers</Text>

@@ -5,11 +5,12 @@ import { MapStackParamList, EnrichedStation } from '@/types/navigation';
 
 type Props = NativeStackScreenProps<MapStackParamList, 'NearbyStations'>;
 
-const formatDistance = (km: number) => (km < 1 ? `${(km*1000).toFixed(0)} m` : `${km.toFixed(1)} km`);
+const formatDistance = (km: number) =>
+  km < 1 ? `${(km * 1000).toFixed(0)} m` : `${km.toFixed(1)} km`;
 
 export default function NearbyStationsScreen({ navigation, route }: Props) {
   const { stations } = route.params;
-  const [sortKey, setSortKey] = React.useState<'distance'|'rating'|'availability'>('distance');
+  const [sortKey, setSortKey] = React.useState<'distance' | 'rating' | 'availability'>('distance');
   const [showAvailableOnly, setShowAvailableOnly] = React.useState(false);
   const [plugFilter, setPlugFilter] = React.useState<string | null>(null);
 
@@ -19,15 +20,18 @@ export default function NearbyStationsScreen({ navigation, route }: Props) {
     return true;
   });
 
-  const sorted = [...filtered].sort((a,b) => {
+  const sorted = [...filtered].sort((a, b) => {
     switch (sortKey) {
-      case 'rating': return b.rating - a.rating;
-      case 'availability': return (b.availablePlugs/b.totalPlugs) - (a.availablePlugs/a.totalPlugs);
-      default: return a.distanceKm - b.distanceKm;
+      case 'rating':
+        return b.rating - a.rating;
+      case 'availability':
+        return b.availablePlugs / b.totalPlugs - a.availablePlugs / a.totalPlugs;
+      default:
+        return a.distanceKm - b.distanceKm;
     }
   });
 
-  const distinctPlugTypes = Array.from(new Set(stations.flatMap(s => s.plugTypes))).slice(0,6);
+  const distinctPlugTypes = Array.from(new Set(stations.flatMap(s => s.plugTypes))).slice(0, 6);
 
   const renderStation = ({ item }: { item: EnrichedStation }) => (
     <TouchableOpacity
@@ -36,11 +40,13 @@ export default function NearbyStationsScreen({ navigation, route }: Props) {
     >
       <View style={styles.stationInfo}>
         <Text style={styles.stationName}>{item.title}</Text>
-        <Text style={styles.stationDistance}>{formatDistance(item.distanceKm)} • {item.driveMinutes.toFixed(0)} min drive</Text>
+        <Text style={styles.stationDistance}>
+          {formatDistance(item.distanceKm)} • {item.driveMinutes.toFixed(0)} min drive
+        </Text>
         <Text style={styles.stationMeta}>{item.plugTypes.join(', ') || 'Unknown plugs'}</Text>
       </View>
       <View style={styles.availabilityInfo}>
-        <Text style={[styles.availableText, item.availablePlugs === 0 && {color:'#d32f2f'}]}>
+        <Text style={[styles.availableText, item.availablePlugs === 0 && { color: '#d32f2f' }]}>
           {item.availablePlugs}/{item.totalPlugs}
         </Text>
         <Text style={styles.availableLabel}>Available</Text>
@@ -52,17 +58,32 @@ export default function NearbyStationsScreen({ navigation, route }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.controlsRow}>
-        <TouchableOpacity style={styles.controlBtn} onPress={() => setSortKey(sortKey === 'distance' ? 'rating' : sortKey === 'rating' ? 'availability' : 'distance')}>
+        <TouchableOpacity
+          style={styles.controlBtn}
+          onPress={() =>
+            setSortKey(
+              sortKey === 'distance' ? 'rating' : sortKey === 'rating' ? 'availability' : 'distance'
+            )
+          }
+        >
           <Text style={styles.controlBtnText}>Sort: {sortKey}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.controlBtn} onPress={() => setShowAvailableOnly(v => !v)}>
-          <Text style={styles.controlBtnText}>{showAvailableOnly ? 'Showing Available' : 'All Stations'}</Text>
+          <Text style={styles.controlBtnText}>
+            {showAvailableOnly ? 'Showing Available' : 'All Stations'}
+          </Text>
         </TouchableOpacity>
       </View>
       <View style={styles.filterRow}>
         {distinctPlugTypes.map(pt => (
-          <TouchableOpacity key={pt} style={[styles.filterChip, plugFilter===pt && styles.filterChipActive]} onPress={() => setPlugFilter(plugFilter===pt? null : pt)}>
-            <Text style={[styles.filterChipText, plugFilter===pt && styles.filterChipTextActive]}>{pt}</Text>
+          <TouchableOpacity
+            key={pt}
+            style={[styles.filterChip, plugFilter === pt && styles.filterChipActive]}
+            onPress={() => setPlugFilter(plugFilter === pt ? null : pt)}
+          >
+            <Text style={[styles.filterChipText, plugFilter === pt && styles.filterChipTextActive]}>
+              {pt}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -71,7 +92,7 @@ export default function NearbyStationsScreen({ navigation, route }: Props) {
         renderItem={renderStation}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContent}
-        ListEmptyComponent={<Text style={{padding:20}}>No stations match filters.</Text>}
+        ListEmptyComponent={<Text style={{ padding: 20 }}>No stations match filters.</Text>}
       />
     </View>
   );

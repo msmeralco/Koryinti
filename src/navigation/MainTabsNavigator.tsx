@@ -28,6 +28,7 @@ function TabItem({
 }: {
   focused: boolean;
   label: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   IconComponent: any;
   iconName: string;
 }) {
@@ -98,12 +99,7 @@ export default function MainTabsNavigator() {
         component={ProfileScreen}
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabItem
-              focused={focused}
-              label="Profile"
-              IconComponent={Feather}
-              iconName="user"
-            />
+            <TabItem focused={focused} label="Profile" IconComponent={Feather} iconName="user" />
           ),
         }}
       />
