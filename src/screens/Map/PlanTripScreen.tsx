@@ -11,6 +11,7 @@ import { getNearbyChargingStations } from '@/services/routeService';
 import { Station } from '@/types/navigation';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { calculateDetailedRoute } from '@/services/routeCalculationEngine';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 type Props = NativeStackScreenProps<MapStackParamList, 'PlanTrip'>;
 
@@ -32,6 +33,11 @@ export default function PlanTripScreen({ navigation }: Props) {
   const [gettingLocation, setGettingLocation] = useState(false);
   const [nearbyStations, setNearbyStations] = useState<Station[]>([]);
   const [isFormCollapsed, setIsFormCollapsed] = useState(false);
+
+  // Departure time selection
+  const [departureTime, setDepartureTime] = useState<'now' | 'custom'>('now');
+  const [selectedDateTime, setSelectedDateTime] = useState<Date>(new Date());
+  const [showDateTimePicker, setShowDateTimePicker] = useState(false);
 
   // Map region - will update to user's location
   const [region, setRegion] = useState({
@@ -127,15 +133,69 @@ export default function PlanTripScreen({ navigation }: Props) {
     return () => clearTimeout(timer);
   }, [to, activeField]);
 
+  // Handle datetime picker change
+  const onDateTimeChange = (event: any, selectedDate?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowDateTimePicker(false);
+    }
+    if (selectedDate) {
+      setSelectedDateTime(selectedDate);
+      if (Platform.OS === 'ios') {
+        // iOS uses inline picker, keep it open
+      }
+    }
+  };
+
+  // Get traffic prediction based on departure time
+  const getTrafficMultiplier = (date: Date): number => {
+    const hour = date.getHours();
+    const day = date.getDay(); // 0 = Sunday, 6 = Saturday
+
+    // Weekend traffic (lighter)
+    if (day === 0 || day === 6) {
+      if (hour >= 10 && hour <= 20) return 1.1; // Moderate
+      return 1.0; // Light
+    }
+
+    // Weekday traffic patterns
+    if ((hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19)) {
+      return 1.3; // Heavy rush hour
+    } else if ((hour >= 10 && hour <= 16) || (hour >= 20 && hour <= 22)) {
+      return 1.15; // Moderate
+    }
+    return 1.0; // Light traffic (late night/early morning)
+  };
+
+  // Format departure time display
+  const formatDepartureTime = (): string => {
+    if (departureTime === 'now') return 'Leave now';
+    const now = new Date();
+    const timeDiff = selectedDateTime.getTime() - now.getTime();
+    const hoursDiff = Math.floor(timeDiff / (1000 * 60 * 60));
+    const minutesDiff = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+
+    if (timeDiff < 0) return 'Leave now (time passed)';
+    if (hoursDiff === 0 && minutesDiff < 30) return 'Leave soon';
+
+    const timeStr = selectedDateTime.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+    const dateStr = selectedDateTime.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+    });
+
+    return `${dateStr} at ${timeStr}`;
+  };
+
   const handlePlanRoute = async () => {
     if (from && to) {
       Keyboard.dismiss();
 
-      // Show loading state
-      Alert.alert('Calculating Route', 'Please wait while we plan your trip...');
-
       try {
-        // Pre-validate the route to check if it's possible
+        // Pre-validate the route to check if it's possible (silently)
         const result = await calculateDetailedRoute({
           from,
           to,
@@ -463,6 +523,86 @@ export default function PlanTripScreen({ navigation }: Props) {
                   </View>
                 </View>
 
+                {/* Departure Time Selection */}
+                <View style={styles.departureSection}>
+                  <View style={styles.departureButtons}>
+                    <TouchableOpacity
+                      style={[
+                        styles.departureButton,
+                        departureTime === 'now' && styles.departureButtonActive,
+                      ]}
+                      onPress={() => {
+                        setDepartureTime('now');
+                        setSelectedDateTime(new Date());
+                      }}
+                    >
+                      <Ionicons
+                        name="navigate"
+                        size={18}
+                        color={departureTime === 'now' ? '#000000' : '#00F470'}
+                      />
+                      <Text
+                        style={[
+                          styles.departureButtonText,
+                          departureTime === 'now' && styles.departureButtonTextActive,
+                        ]}
+                      >
+                        Leave now
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.departureButton,
+                        departureTime === 'custom' && styles.departureButtonActive,
+                      ]}
+                      onPress={() => {
+                        setDepartureTime('custom');
+                        setShowDateTimePicker(true);
+                      }}
+                    >
+                      <Ionicons
+                        name="calendar-outline"
+                        size={18}
+                        color={departureTime === 'custom' ? '#000000' : '#00F470'}
+                      />
+                      <Text
+                        style={[
+                          styles.departureButtonText,
+                          departureTime === 'custom' && styles.departureButtonTextActive,
+                        ]}
+                      >
+                        {departureTime === 'custom' ? formatDepartureTime() : 'Schedule'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Traffic prediction hint */}
+                  {departureTime === 'custom' && (
+                    <Text style={styles.trafficHint}>
+                      {(() => {
+                        const multiplier = getTrafficMultiplier(selectedDateTime);
+                        if (multiplier >= 1.25) return '🔴 Heavy traffic expected';
+                        if (multiplier >= 1.1) return '🟡 Moderate traffic';
+                        return '🟢 Light traffic';
+                      })()}
+                    </Text>
+                  )}
+                </View>
+
+                {/* DateTime Picker - Compact for both platforms */}
+                {showDateTimePicker && (
+                  <DateTimePicker
+                    value={selectedDateTime}
+                    mode="datetime"
+                    display={Platform.OS === 'ios' ? 'compact' : 'default'}
+                    onChange={onDateTimeChange}
+                    minimumDate={new Date()}
+                    textColor="#FFFFFF"
+                    themeVariant="dark"
+                  />
+                )}
+
                 <TouchableOpacity
                   style={[styles.button, (!from || !to) && styles.buttonDisabled]}
                   onPress={handlePlanRoute}
@@ -693,5 +833,67 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     textAlign: 'center',
+  },
+  // Departure time styles
+  departureSection: {
+    marginBottom: 18,
+    marginTop: 4,
+  },
+  departureButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  departureButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: '#0B1020',
+    borderWidth: 1,
+    borderColor: '#00F470',
+  },
+  departureButtonActive: {
+    backgroundColor: '#00F470',
+    borderColor: '#00F470',
+  },
+  departureButtonText: {
+    fontSize: 14,
+    color: '#00F470',
+    fontWeight: '600',
+  },
+  departureButtonTextActive: {
+    color: '#000000',
+  },
+  trafficHint: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  datePickerContainer: {
+    backgroundColor: '#0B1020',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(0,244,112,0.3)',
+  },
+  datePickerDone: {
+    backgroundColor: '#00F470',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 999,
+    marginTop: 12,
+    alignItems: 'center',
+  },
+  datePickerDoneText: {
+    color: '#000000',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });
