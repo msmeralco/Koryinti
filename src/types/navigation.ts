@@ -1,6 +1,10 @@
 export type RootStackParamList = {
   Registration: undefined;
   AddVehicle: undefined;
+  AddPayment: undefined;
+  Notifications: undefined;
+  Privacy: undefined;
+  HelpSupport: undefined;
   MainTabs: undefined;
   AdminDashboard: undefined;
 };
@@ -9,6 +13,7 @@ export type MainTabsParamList = {
   Map: undefined;
   Profile: undefined;
   Reservations: undefined;
+  Data: undefined;
 };
 
 export type MapStackParamList = {

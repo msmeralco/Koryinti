@@ -1,4 +1,6 @@
 // Simple in-memory reservations store. In a production app you'd persist via AsyncStorage or backend.
+import { loadReservationsForDevice, saveReservationsForDevice } from './deviceStore';
+
 export interface ReservationSession {
   id: string;
   station: string;
@@ -10,7 +12,7 @@ export interface ReservationSession {
 }
 
 // Seed with existing mock sessions (old static list) – latest (active) will be unshifted when added.
-const reservations: ReservationSession[] = [
+let reservations: ReservationSession[] = [
   {
     id: '1',
     station: 'BF Homes, Paranaque City',
@@ -49,7 +51,20 @@ const reservations: ReservationSession[] = [
   },
 ];
 
-export function addActiveReservation(stationTitle: string, durationMinutes = 60) {
+// Load persisted reservations (if any) on module init. This is async but we keep an in-memory
+// copy for quick synchronous reads when needed. Consumers should prefer the async getters.
+(async () => {
+  try {
+    const stored = await loadReservationsForDevice<ReservationSession[]>();
+    if (stored && Array.isArray(stored) && stored.length > 0) {
+      reservations = stored.concat(reservations);
+    }
+  } catch (e) {
+    // ignore
+  }
+})();
+
+export async function addActiveReservation(stationTitle: string, durationMinutes = 60) {
   const now = new Date();
   const end = new Date(now.getTime() + durationMinutes * 60_000);
   const fmt = (d: Date) => d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
@@ -58,7 +73,7 @@ export function addActiveReservation(stationTitle: string, durationMinutes = 60)
   const session: ReservationSession = {
     id: String(Date.now()),
     station: stationTitle,
-    hostName: 'You', // Placeholder – integrate with user profile later
+    hostName: 'Mark Ilagan', // Use real test user instead of generic 'You'
     vehicle: 'Tesla Model 3', // Placeholder – choose active vehicle later
     date: dateStr,
     timeRange: `${fmt(now)} - ${fmt(end)}`,
@@ -66,17 +81,29 @@ export function addActiveReservation(stationTitle: string, durationMinutes = 60)
   };
   // Insert at front so it's treated as active reservation (index 0)
   reservations.unshift(session);
+  // persist per-device
+  try {
+    await saveReservationsForDevice(reservations);
+  } catch (e) {
+    // non-fatal
+  }
   return session;
 }
 
-export function getReservations(): ReservationSession[] {
+export async function getReservations(): Promise<ReservationSession[]> {
+  // Return a copy
   return reservations.slice();
 }
 
 // Optional: tick down active reservation minutes (could be driven by an interval elsewhere)
-export function decrementActiveReservationMinute() {
+export async function decrementActiveReservationMinute() {
   const active = reservations[0];
   if (active && active.minutesLeft > 0) {
     active.minutesLeft = Math.max(active.minutesLeft - 1, 0);
+    try {
+      await saveReservationsForDevice(reservations);
+    } catch (e) {
+      // ignore
+    }
   }
 }

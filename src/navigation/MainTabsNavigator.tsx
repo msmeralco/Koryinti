@@ -18,7 +18,7 @@ const Tab = createBottomTabNavigator<MainTabsParamList>();
  */
 
 const TAB_BAR_BG = '#050608';
-const ACTIVE_PILL = '#4CAF50';
+const ACTIVE_PILL = '#00F470';
 const ACTIVE_TEXT = '#FFFFFF';
 const INACTIVE_ICON = 'rgba(255,255,255,0.8)';
 const HORIZONTAL_PADDING = 24; // inset bar so pill never touches phone edge
@@ -108,8 +108,8 @@ function AnimatedTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const usableWidth = width - HORIZONTAL_PADDING * 2; // inset from edges
   const tabWidth = usableWidth / TAB_COUNT;
 
-  const barHeight = 80;
-  const pillHeight = 36;
+  const barHeight = 88;
+  const pillHeight = 44;
 
   const animatedIndex = useRef(new Animated.Value(state.index)).current;
   const animatedWidth = useRef(
@@ -156,7 +156,7 @@ function AnimatedTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
           {
             height: pillHeight,
             top: (barHeight - pillHeight) / 2,
-            width: animatedWidth,
+                width: animatedWidth,
             transform: [{ translateX: pillTranslateX }],
           },
         ]}
@@ -321,8 +321,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 999,
-    paddingHorizontal: 18,
-    paddingVertical: 8,
+    paddingHorizontal: 22,
+    paddingVertical: 10,
     backgroundColor: ACTIVE_PILL,
   },
   tabItem: {

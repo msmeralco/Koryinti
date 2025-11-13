@@ -15,12 +15,23 @@ const CarImage = require('../../../assets/carimage.png');
  * styled like the Sessions mock: dark theme + hero image + green pill.
  */
 export default function ReservationsScreen() {
-  const [reservations, setReservations] = useState<ReservationSession[]>(getReservations());
+  const [reservations, setReservations] = useState<ReservationSession[]>([]);
 
   // Refresh when screen gains focus (e.g. after creating a reservation on StationProfile)
   useFocusEffect(
     React.useCallback(() => {
-      setReservations(getReservations());
+      let mounted = true;
+      (async () => {
+        try {
+          const res = await getReservations();
+          if (mounted) setReservations(res);
+        } catch (e) {
+          // ignore
+        }
+      })();
+      return () => {
+        mounted = false;
+      };
     }, [])
   );
   const renderReservation = ({

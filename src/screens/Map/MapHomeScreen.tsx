@@ -7,6 +7,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { OPENCHARGEMAP_API_KEY } from '@env';
 import mapDarkStyle from './mapDarkStyle.json';
+ import { generateFakePOIs } from '@/services/openChargeMapService';
 
 type Props = NativeStackScreenProps<MapStackParamList, 'MapHome'>;
 
@@ -64,6 +65,14 @@ export default function MapHomeScreen({ navigation }: Props) {
         const resp = await fetch(url);
         if (!resp.ok) throw new Error(`OpenChargeMap request failed: ${resp.status}`);
         const data = await resp.json();
+        // Append fake POIs so the main map shows extra coverage in Central/South Luzon for demo
+        try {
+          const central = generateFakePOIs('central-luzon', 20);
+          const south = generateFakePOIs('south-luzon', 20);
+          data.push(...central, ...south);
+        } catch (e) {
+          // ignore if fake generation fails
+        }
         setRawPOIs(data);
 
         // Enrich stations once
@@ -169,11 +178,11 @@ export default function MapHomeScreen({ navigation }: Props) {
     carImage: { width: 190, height: 100 },
     buttonContainer: { marginTop: 4, gap: 12 },
     buttonIcon: { marginRight: 10 },
-    primaryButton: {
+      primaryButton: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: '#46F98C',
+      backgroundColor: '#00F470',
       paddingVertical: 16,
       borderRadius: 20,
     },
@@ -188,19 +197,19 @@ export default function MapHomeScreen({ navigation }: Props) {
     },
     secondaryButtonText: { color: '#FFFFFF', fontSize: 18, fontWeight: '600' },
     userMarkerWrapper: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
-    userMarkerCore: {
+      userMarkerCore: {
       width: 16,
       height: 16,
       borderRadius: 8,
-      backgroundColor: '#00E0A8',
+      backgroundColor: '#00F470',
       borderWidth: 2,
       borderColor: '#ffffff',
-      shadowColor: '#00E0A8',
+      shadowColor: '#00F470',
       shadowOpacity: 0.7,
       shadowRadius: 4,
       elevation: 6,
     },
-    userMarkerPulse: { position: 'absolute', width: 28, height: 28, borderRadius: 14, backgroundColor: '#00E0A8' },
+    userMarkerPulse: { position: 'absolute', width: 28, height: 28, borderRadius: 14, backgroundColor: '#00F470' },
     modalBackdrop: {
       position: 'absolute',
       top: 0,
@@ -228,7 +237,7 @@ export default function MapHomeScreen({ navigation }: Props) {
     modalButtons: { flexDirection: 'row', marginTop: 12, gap: 12 },
     viewProfileBtn: {
       flex: 1,
-      backgroundColor: '#46F98C',
+      backgroundColor: '#00F470',
       paddingVertical: 12,
       borderRadius: 14,
       alignItems: 'center',

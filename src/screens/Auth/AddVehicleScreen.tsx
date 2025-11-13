@@ -3,7 +3,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/types/navigation';
 import { useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { saveVehicleData } from '@/services/deviceStore';
 import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import BackArrow from '@/components/BackArrow';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AddVehicle'>;
 
@@ -57,6 +60,23 @@ export default function AddVehicleScreen({ navigation }: Props) {
   const [modelModalVisible, setModelModalVisible] = useState(false);
 
   const handleSubmit = () => {
+    // Persist vehicle selection for this device so route calculations and other services
+    // can read the chosen vehicle. We write both the device-scoped store and the
+    // legacy global 'vehicleData' key for compatibility.
+    const vehicleData = {
+      licensePlate,
+      brand,
+      model,
+      plug: selectedPlug,
+      createdAt: Date.now(),
+    };
+    try {
+      AsyncStorage.setItem('vehicleData', JSON.stringify(vehicleData));
+      // device scoped
+      saveVehicleData(vehicleData).catch(() => {});
+    } catch (e) {
+      // ignore
+    }
     navigation.navigate('MainTabs');
   };
 
@@ -97,9 +117,7 @@ export default function AddVehicleScreen({ navigation }: Props) {
         {/* Header */}
         <View style={styles.headerRow}>
           <Text style={styles.title}>Add Vehicle</Text>
-          <TouchableOpacity onPress={handleBack}>
-            <Ionicons name="chevron-back" size={26} color="#FFFFFF" />
-          </TouchableOpacity>
+          <BackArrow onPress={handleBack} />
         </View>
 
         {/* Scrollable content */}

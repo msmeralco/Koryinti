@@ -1,13 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Dimensions,
-  SafeAreaView,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LineChart } from 'react-native-chart-kit';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -134,7 +127,7 @@ export default function AdminDashboard() {
   }, [barValues, sortDescending]);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top','left','right','bottom']}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Header with back button */}
         <View style={styles.headerRow}>

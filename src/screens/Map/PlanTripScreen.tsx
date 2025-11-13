@@ -10,6 +10,7 @@ import * as Location from 'expo-location';
 import { getNearbyChargingStations } from '@/services/routeService';
 import { Station } from '@/types/navigation';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import BackArrow from '@/components/BackArrow';
 import { calculateDetailedRoute } from '@/services/routeCalculationEngine';
 
 type Props = NativeStackScreenProps<MapStackParamList, 'PlanTrip'>;
@@ -270,6 +271,11 @@ export default function PlanTripScreen({ navigation }: Props) {
             {/* Handle bar to match bottom sheet styling */}
             <View style={styles.handleBar} />
 
+            {/* Back button for Plan a Trip */}
+            <TouchableOpacity style={styles.planBack} onPress={() => navigation.goBack()}>
+              <BackArrow onPress={() => navigation.goBack()} />
+            </TouchableOpacity>
+
             {/* Toggle button */}
             <TouchableOpacity
               style={styles.toggleButton}
@@ -492,6 +498,7 @@ const styles = StyleSheet.create({
   },
   map: {
     flex: 1,
+    backgroundColor: '#EAC67A',
   },
   inputContainer: {
     paddingHorizontal: 20,
@@ -693,5 +700,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     textAlign: 'center',
+  },
+  planBack: {
+    alignSelf: 'flex-start',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    marginBottom: 10,
+  },
+  planBackText: {
+    color: '#E5E7EB',
+    fontWeight: '600',
+    fontSize: 14,
   },
 });

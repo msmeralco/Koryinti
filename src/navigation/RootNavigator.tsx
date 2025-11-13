@@ -6,6 +6,10 @@ import RegistrationScreen from '@/screens/Auth/RegistrationScreen';
 import AddVehicleScreen from '@/screens/Auth/AddVehicleScreen';
 import MainTabsNavigator from './MainTabsNavigator';
 import AdminDashboard from '@/screens/Admin/AdminDashboard';
+import PrivacyScreen from '@/screens/Profile/PrivacyScreen';
+import HelpSupportScreen from '@/screens/Profile/HelpSupportScreen';
+import AddPaymentScreen from '@/screens/Profile/AddPaymentScreen';
+import NotificationsScreen from '@/screens/Profile/NotificationsScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -25,6 +29,10 @@ export default function RootNavigator() {
       >
         <Stack.Screen name="Registration" component={RegistrationScreen} />
         <Stack.Screen name="AddVehicle" component={AddVehicleScreen} />
+        <Stack.Screen name="AddPayment" component={AddPaymentScreen} />
+  <Stack.Screen name="Notifications" component={NotificationsScreen} />
+        <Stack.Screen name="Privacy" component={PrivacyScreen} />
+        <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
         <Stack.Screen name="MainTabs" component={MainTabsNavigator} />
         <Stack.Screen name="AdminDashboard" component={AdminDashboard} />
       </Stack.Navigator>

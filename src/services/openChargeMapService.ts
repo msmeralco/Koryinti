@@ -108,7 +108,7 @@ export async function searchStationsAlongRoute(
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parseStations(data: any[]): ChargingStation[] {
-  return data.map(poi => {
+  const parsed = data.map(poi => {
     const addressInfo = poi.AddressInfo || {};
     const connections = poi.Connections || [];
     const statusType = poi.StatusType?.Title || 'Unknown';
@@ -151,6 +151,105 @@ function parseStations(data: any[]): ChargingStation[] {
       isFastCharger,
     };
   });
+
+  // Inject synthetic stations for demo: 20 in Central Luzon and 20 in South Luzon.
+  // These are appended to the API results so UI and routing see more coverage in those regions.
+  try {
+  const centralFakes = generateFakeStations('central-luzon', 20);
+  const southFakes = generateFakeStations('south-luzon', 20);
+  return ([...parsed, ...centralFakes, ...southFakes] as ChargingStation[]);
+  } catch (e) {
+    // If fake generation fails for any reason, return parsed results only.
+    return parsed;
+  }
+}
+
+// Generate fake charging stations within rough bounding boxes for two regions.
+function generateFakeStations(region: 'central-luzon' | 'south-luzon', count: number): ChargingStation[] {
+  const stations: ChargingStation[] = [];
+  const now = Date.now();
+  // Bounding boxes (approx)
+  const boxes: Record<string, { minLat: number; maxLat: number; minLon: number; maxLon: number }> = {
+    'central-luzon': { minLat: 14.8, maxLat: 16.2, minLon: 120.2, maxLon: 121.2 },
+    'south-luzon': { minLat: 13.1, maxLat: 14.3, minLon: 120.8, maxLon: 123.0 },
+  };
+
+  const box = boxes[region];
+  const connectorPool = ['CCS', 'CHAdeMO', 'Type 2', 'GB/T'];
+
+  // Use distinct negative ID ranges per region so multiple calls don't produce duplicates
+  const regionOffset = region === 'central-luzon' ? 1_000_000 : 2_000_000;
+  const base = -((now % 900000000) + regionOffset);
+  for (let i = 0; i < count; i++) {
+    const lat = randomInRange(box.minLat, box.maxLat);
+    const lon = randomInRange(box.minLon, box.maxLon);
+    const id = base - i; // negative id in region-specific block to avoid colliding with real IDs and other region fakes
+    const power = randomInt(7, 150);
+    const connectors = shuffleArray(connectorPool).slice(0, randomInt(1, connectorPool.length));
+    const name = `${region === 'central-luzon' ? 'Central Luzon' : 'South Luzon'} EV Charger ${i + 1}`;
+    const address = `${randomStreetName()} , ${region === 'central-luzon' ? 'Central Luzon' : 'Southern Luzon'}`;
+
+    stations.push({
+      id,
+      name,
+      latitude: lat,
+      longitude: lon,
+      address,
+      distance: undefined,
+      operatorName: 'Demo Operator',
+      numberOfPoints: randomInt(1, 8),
+      statusType: 'Operational',
+      powerKW: power,
+      connectorTypes: connectors,
+      isAvailable: true,
+      isFastCharger: power >= 50,
+    });
+  }
+
+  return stations;
+}
+
+// Export helper that returns objects shaped like OpenChargeMap POI responses so callers
+// that parse raw API results (like MapHomeScreen) can append fake POIs directly.
+export function generateFakePOIs(region: 'central-luzon' | 'south-luzon', count: number) {
+  const stations = generateFakeStations(region, count);
+  return stations.map(s => {
+    return {
+      ID: s.id,
+      AddressInfo: {
+        Title: s.name,
+        AddressLine1: s.address,
+        Latitude: s.latitude,
+        Longitude: s.longitude,
+        Town: s.operatorName,
+        StateOrProvince: region === 'central-luzon' ? 'Central Luzon' : 'Southern Luzon',
+      },
+      Connections: (s.connectorTypes || []).map(ct => ({ PowerKW: s.powerKW, ConnectionType: { Title: ct } })),
+      NumberOfPoints: s.numberOfPoints,
+    } as any;
+  });
+}
+
+function randomInRange(min: number, max: number) {
+  return Math.random() * (max - min) + min;
+}
+
+function randomInt(min: number, max: number) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function shuffleArray<T>(arr: T[]): T[] {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function randomStreetName() {
+  const names = ['Mabini St.', 'Rizal Ave.', 'Bonifacio Dr.', 'Legazpi Rd.', 'Aguinaldo Hwy.', 'Governor`s Dr.'];
+  return names[Math.floor(Math.random() * names.length)];
 }
 
 /**

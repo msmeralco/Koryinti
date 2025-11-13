@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 
@@ -18,11 +18,12 @@ export default function ProfileScreen() {
       >
         {/* HEADER */}
         <View style={styles.header}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>JD</Text>
-          </View>
-          <Text style={styles.name}>John Doe</Text>
-          <Text style={styles.email}>john.doe@example.com</Text>
+          <Image
+            source={{ uri: 'https://randomuser.me/api/portraits/men/75.jpg' }}
+            style={styles.avatarImage}
+          />
+          <Text style={styles.name}>Mark Ilagan</Text>
+          <Text style={styles.email}>milagan@up.edu.ph</Text>
         </View>
 
         {/* VEHICLES */}
@@ -37,7 +38,7 @@ export default function ProfileScreen() {
               <Text style={styles.defaultBadgeText}>Primary</Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.addButton}>
+          <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('AddVehicle') }>
             <Text style={styles.addButtonText}>+ Add Vehicle</Text>
           </TouchableOpacity>
         </View>
@@ -51,7 +52,7 @@ export default function ProfileScreen() {
               <Text style={styles.defaultBadgeText}>Default</Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.addButton}>
+          <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('AddPayment')}>
             <Text style={styles.addButtonText}>+ Add Payment Method</Text>
           </TouchableOpacity>
         </View>
@@ -59,15 +60,15 @@ export default function ProfileScreen() {
         {/* SETTINGS */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Settings</Text>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('Notifications')}>
             <Text style={styles.menuText}>Notifications</Text>
             <Text style={styles.menuArrow}>›</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('Privacy')}>
             <Text style={styles.menuText}>Privacy</Text>
             <Text style={styles.menuArrow}>›</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('HelpSupport')}>
             <Text style={styles.menuText}>Help & Support</Text>
             <Text style={styles.menuArrow}>›</Text>
           </TouchableOpacity>
@@ -75,7 +76,7 @@ export default function ProfileScreen() {
         </View>
 
         {/* LOGOUT */}
-        <TouchableOpacity style={styles.logoutButton}>
+        <TouchableOpacity style={styles.logoutButton} onPress={() => navigation.navigate('Registration')}>
           <Text style={styles.logoutText}>Log Out</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -114,6 +115,12 @@ const styles = StyleSheet.create({
     backgroundColor: GREEN,
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 16,
+  },
+  avatarImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     marginBottom: 16,
   },
   avatarText: {

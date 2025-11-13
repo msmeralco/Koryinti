@@ -48,6 +48,7 @@ coverage/
 # API Keys and Secrets
 google-services.json
 GoogleService-Info.plist
+revolt-534d9-firebase-adminsdk-fbsvc-a92572d98d.json
 
 # Temporary files
 *.swp

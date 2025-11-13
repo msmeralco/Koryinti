@@ -19,9 +19,9 @@ type Props = NativeStackScreenProps<MapStackParamList, 'StationProfile'>;
 export default function StationProfileScreen({ navigation, route }: Props) {
   const { station } = route.params;
 
-  const handleReserve = () => {
+  const handleReserve = async () => {
     // Add active reservation & navigate to Reservations tab so user sees it immediately.
-    addActiveReservation(station.title, 60);
+    await addActiveReservation(station.title, 60);
     // Navigate to the Reservations tab (parent navigator assumed to have it)
     const parent = navigation.getParent();
     if (parent) parent.navigate('Reservations' as never);
@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
   availability: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#46F98C',
+  color: '#00F470',
   },
   buttonContainer: {
     padding: 20,
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   primaryButton: {
-    backgroundColor: '#46F98C',
+  backgroundColor: '#00F470',
     paddingVertical: 12,
     borderRadius: 8,
   },

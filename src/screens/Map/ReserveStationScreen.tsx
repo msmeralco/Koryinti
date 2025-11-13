@@ -26,7 +26,32 @@ export default function ReserveStationScreen({ navigation, route }: Props) {
       duration,
       estimatedCost: duration * 12.5,
     };
-    navigation.navigate('ConfirmPayment', { stationId, reservationDetails });
+    // Navigate directly to ReservationDetails with a mock EnrichedStation (keeps behaviour like before)
+    const mockStation = {
+      id: stationId,
+      title: 'Charging Station',
+      address: 'Address not available',
+      latitude: 0,
+      longitude: 0,
+      totalPlugs: 4,
+      plugsInUse: 1,
+      availablePlugs: 3,
+      plugTypes: ['Type 2', 'CCS'],
+      powerKW: 50,
+      distanceKm: 0,
+      driveMinutes: 0,
+      rating: 4.5,
+      pricePerKWh: reservationDetails.estimatedCost / reservationDetails.duration / 20,
+      amenities: {
+        wifi: true,
+        bathroom: true,
+        pwdFriendly: true,
+        waitingLounge: true,
+      },
+      state: '',
+    };
+
+    navigation.navigate('ReservationDetails', { routeId: 'res-' + Date.now(), stations: [mockStation] });
   };
 
   const estimatedCost = duration * 12.5;
