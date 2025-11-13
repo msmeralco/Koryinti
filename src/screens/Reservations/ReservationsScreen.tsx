@@ -140,7 +140,7 @@ export default function ReservationsScreen() {
   );
 }
 
-const NEON_GREEN = '#9BFF4F';
+const NEON_GREEN = '#00F470';
 const BACKGROUND = '#02040A';
 const CARD_BG = '#050814';
 const TEXT_MAIN = '#F5F5FF';
