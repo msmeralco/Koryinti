@@ -11,6 +11,7 @@ const Tab = createBottomTabNavigator<MainTabsParamList>();
  * MainTabsNavigator provides the primary bottom tab navigation
  * for the main sections of the app after user registration/login
  */
+
 export default function MainTabsNavigator() {
   return (
     <Tab.Navigator

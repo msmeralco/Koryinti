@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-nativ
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MapStackParamList } from '@/types/navigation';
 import { useState } from 'react';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 
 type Props = NativeStackScreenProps<MapStackParamList, 'PlanTrip'>;
 
@@ -9,9 +10,18 @@ type Props = NativeStackScreenProps<MapStackParamList, 'PlanTrip'>;
  * PlanTripScreen allows users to input their origin and destination
  * to get a suggested route with charging stations along the way.
  */
+
 export default function PlanTripScreen({ navigation }: Props) {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
+
+  // Default map region (Central Manila, Metro Manila, Philippines)
+  const [region] = useState({
+    latitude: 14.5995,
+    longitude: 120.9842,
+    latitudeDelta: 0.0922,
+    longitudeDelta: 0.0421,
+  });
 
   const handlePlanRoute = () => {
     if (from && to) {
@@ -21,9 +31,23 @@ export default function PlanTripScreen({ navigation }: Props) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.mapPlaceholder}>
-        <Text style={styles.mapText}>Map Background</Text>
-      </View>
+      <MapView
+        style={styles.map}
+        initialRegion={region}
+        provider={PROVIDER_GOOGLE}
+        showsUserLocation
+        showsMyLocationButton
+      >
+        {/* Example marker - Central Manila */}
+        <Marker
+          coordinate={{
+            latitude: 14.5995,
+            longitude: 120.9842,
+          }}
+          title="Central Manila"
+          description="Metro Manila, Philippines"
+        />
+      </MapView>
 
       <View style={styles.inputContainer}>
         <Text style={styles.title}>Plan Your Trip</Text>
@@ -65,15 +89,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  mapPlaceholder: {
+  map: {
     flex: 1,
-    backgroundColor: '#E8F5E9',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  mapText: {
-    fontSize: 20,
-    color: '#4CAF50',
   },
   inputContainer: {
     padding: 20,
