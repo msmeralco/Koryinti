@@ -150,6 +150,8 @@ export interface RouteCalculationOptions {
   preferFastChargers?: boolean; // Default: true
   maxDetourKm?: number; // Max detour for charging stations (default: 5km)
   minimumArrivalBattery?: number; // Min battery % at destination (default: 15%)
+  chargingStrategy?: number; // 0 = Few long, 1 = Balanced, 2 = Many short (default: 1)
+  trafficMultiplier?: number; // Traffic impact on consumption (default: 1.0)
 }
 
 /**

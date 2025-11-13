@@ -50,6 +50,9 @@ export default function PlanTripScreen({ navigation }: Props) {
   const [selectedDateTime, setSelectedDateTime] = useState<Date>(new Date());
   const [showDateTimePicker, setShowDateTimePicker] = useState(false);
 
+  // Charging strategy: 0 = Few long stops, 1 = Balanced, 2 = Many short stops
+  const [chargingStrategy, setChargingStrategy] = useState<number>(1);
+
   // Map region - will update to user's location
   const [region, setRegion] = useState({
     latitude: 14.5995,
@@ -207,11 +210,16 @@ export default function PlanTripScreen({ navigation }: Props) {
 
       try {
         // Pre-validate the route to check if it's possible (silently)
+        const trafficMultiplier =
+          departureTime === 'custom' ? getTrafficMultiplier(selectedDateTime) : 1.0;
+
         const result = await calculateDetailedRoute({
           from,
           to,
           currentBatteryPercent: batteryPercent,
           minimumArrivalBattery: minArrivalBattery,
+          chargingStrategy,
+          trafficMultiplier,
         });
 
         // Check if route calculation failed
@@ -280,6 +288,8 @@ export default function PlanTripScreen({ navigation }: Props) {
           to,
           currentBatteryPercent: batteryPercent,
           minimumArrivalBattery: minArrivalBattery,
+          chargingStrategy,
+          departureTime: departureTime === 'custom' ? selectedDateTime.toISOString() : undefined,
         });
       } catch (error: any) {
         console.error('Error validating route:', error);
@@ -599,6 +609,75 @@ export default function PlanTripScreen({ navigation }: Props) {
                   )}
                 </View>
 
+                {/* Charging Strategy Selector - ABRP Style */}
+                <View style={styles.strategySection}>
+                  <View style={styles.strategyHeader}>
+                    <Ionicons name="battery-charging" size={16} color="#9CA3AF" />
+                    <Text style={styles.strategyLabel}>Charging stops</Text>
+                  </View>
+
+                  <View style={styles.strategySliderContainer}>
+                    <View style={styles.strategyOptions}>
+                      <TouchableOpacity
+                        style={[
+                          styles.strategyOption,
+                          chargingStrategy === 0 && styles.strategyOptionActive,
+                        ]}
+                        onPress={() => setChargingStrategy(0)}
+                      >
+                        <Text
+                          style={[
+                            styles.strategyOptionText,
+                            chargingStrategy === 0 && styles.strategyOptionTextActive,
+                          ]}
+                        >
+                          Few but long
+                        </Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={[
+                          styles.strategyOption,
+                          chargingStrategy === 1 && styles.strategyOptionActive,
+                        ]}
+                        onPress={() => setChargingStrategy(1)}
+                      >
+                        <Text
+                          style={[
+                            styles.strategyOptionText,
+                            chargingStrategy === 1 && styles.strategyOptionTextActive,
+                          ]}
+                        >
+                          Balanced
+                        </Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={[
+                          styles.strategyOption,
+                          chargingStrategy === 2 && styles.strategyOptionActive,
+                        ]}
+                        onPress={() => setChargingStrategy(2)}
+                      >
+                        <Text
+                          style={[
+                            styles.strategyOptionText,
+                            chargingStrategy === 2 && styles.strategyOptionTextActive,
+                          ]}
+                        >
+                          Many but short
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <Text style={styles.strategyHint}>
+                    {chargingStrategy === 0 && '⚡ Fewer stops, charge to 80-90% (longer charging)'}
+                    {chargingStrategy === 1 && '⚖️ Balanced approach for time and convenience'}
+                    {chargingStrategy === 2 && '🚀 Quick stops, charge to 50-60% (fastest trip)'}
+                  </Text>
+                </View>
+
                 {/* DateTime Picker - Compact for both platforms */}
                 {showDateTimePicker && (
                   <DateTimePicker
@@ -882,6 +961,57 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     marginTop: 8,
     textAlign: 'center',
+  },
+  // Charging strategy styles
+  strategySection: {
+    marginBottom: 18,
+    marginTop: 4,
+  },
+  strategyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 10,
+  },
+  strategyLabel: {
+    fontSize: 13,
+    color: '#E5E7EB',
+    fontWeight: '600',
+  },
+  strategySliderContainer: {
+    marginBottom: 8,
+  },
+  strategyOptions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  strategyOption: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: '#0B1020',
+    borderWidth: 1,
+    borderColor: 'rgba(148,163,184,0.35)',
+    alignItems: 'center',
+  },
+  strategyOptionActive: {
+    backgroundColor: 'rgba(0,244,112,0.15)',
+    borderColor: '#00F470',
+  },
+  strategyOptionText: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    fontWeight: '600',
+  },
+  strategyOptionTextActive: {
+    color: '#00F470',
+  },
+  strategyHint: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    textAlign: 'center',
+    marginTop: 6,
   },
   datePickerContainer: {
     backgroundColor: '#0B1020',
