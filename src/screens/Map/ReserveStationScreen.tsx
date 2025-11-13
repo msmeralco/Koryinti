@@ -36,9 +36,7 @@ export default function ReserveStationScreen({ navigation, route }: Props) {
               style={[styles.timeSlot, selectedTime === time && styles.selectedTimeSlot]}
               onPress={() => setSelectedTime(time)}
             >
-              <Text
-                style={[styles.timeText, selectedTime === time && styles.selectedTimeText]}
-              >
+              <Text style={[styles.timeText, selectedTime === time && styles.selectedTimeText]}>
                 {time}
               </Text>
             </TouchableOpacity>
@@ -56,10 +54,7 @@ export default function ReserveStationScreen({ navigation, route }: Props) {
               onPress={() => setDuration(hours)}
             >
               <Text
-                style={[
-                  styles.durationText,
-                  duration === hours && styles.selectedDurationText,
-                ]}
+                style={[styles.durationText, duration === hours && styles.selectedDurationText]}
               >
                 {hours}h
               </Text>

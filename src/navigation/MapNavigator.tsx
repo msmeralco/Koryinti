@@ -27,7 +27,6 @@ export default function MapNavigator() {
     <Stack.Navigator
       screenOptions={{
         headerShown: true,
-        headerBackTitleVisible: false,
       }}
     >
       <Stack.Screen
@@ -55,11 +54,7 @@ export default function MapNavigator() {
         component={ConfirmPaymentScreen}
         options={{ title: 'Confirm & Pay' }}
       />
-      <Stack.Screen
-        name="PlanTrip"
-        component={PlanTripScreen}
-        options={{ title: 'Plan a Trip' }}
-      />
+      <Stack.Screen name="PlanTrip" component={PlanTripScreen} options={{ title: 'Plan a Trip' }} />
       <Stack.Screen
         name="TripRoute"
         component={TripRouteScreen}
@@ -70,11 +65,7 @@ export default function MapNavigator() {
         component={ReservationDetailsScreen}
         options={{ title: 'Your Reservation' }}
       />
-      <Stack.Screen
-        name="ScanQR"
-        component={ScanQRScreen}
-        options={{ title: 'Scan QR Code' }}
-      />
+      <Stack.Screen name="ScanQR" component={ScanQRScreen} options={{ title: 'Scan QR Code' }} />
       <Stack.Screen
         name="Rating"
         component={RatingScreen}

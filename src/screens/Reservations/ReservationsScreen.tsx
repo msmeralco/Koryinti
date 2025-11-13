@@ -61,9 +61,7 @@ export default function ReservationsScreen() {
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Text style={styles.emptyText}>No reservations yet</Text>
-            <Text style={styles.emptySubtext}>
-              Start by finding a nearby charging station
-            </Text>
+            <Text style={styles.emptySubtext}>Start by finding a nearby charging station</Text>
           </View>
         }
       />
