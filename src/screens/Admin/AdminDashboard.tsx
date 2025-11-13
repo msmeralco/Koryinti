@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Picker } from '@react-native-picker/picker';
 import { LineChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
@@ -124,7 +125,8 @@ export default function AdminDashboard() {
   }, [barValues, sortDescending]);
 
   return (
-    <ScrollView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top','left','right','bottom']}>
+      <ScrollView>
       <Text style={styles.title}>Admin Dashboard</Text>
       <Text style={styles.subtitle}>Electric Consumption Analytics</Text>
 
@@ -268,6 +270,7 @@ export default function AdminDashboard() {
         </View>
       </ScrollView>
     </ScrollView>
+    </SafeAreaView>
   );
 }
 

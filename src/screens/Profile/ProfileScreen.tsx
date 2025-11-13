@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 /**
  * ProfileScreen displays user information and app settings.
@@ -7,10 +8,8 @@ import { useNavigation } from '@react-navigation/native';
 export default function ProfileScreen() {
   const navigation = useNavigation<any>();
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}
-    >
+    <SafeAreaView style={styles.container} edges={['top','left','right']}>
+      <ScrollView contentContainerStyle={styles.contentContainer}>
       {/* HEADER */}
       <View style={styles.header}>
         <View style={styles.avatar}>
@@ -76,7 +75,8 @@ export default function ProfileScreen() {
       <TouchableOpacity style={styles.logoutButton}>
         <Text style={styles.logoutText}>Log Out</Text>
       </TouchableOpacity>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 

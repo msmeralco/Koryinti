@@ -1,7 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MapStackParamList, EnrichedStation } from '@/types/navigation';
+import mapDarkStyle from './mapDarkStyle.json';
 
 type Props = NativeStackScreenProps<MapStackParamList, 'StationProfile'>;
 
@@ -28,11 +31,35 @@ export default function StationProfileScreen({ navigation, route }: Props) {
   ];
 
   return (
-    <ScrollView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top','left','right']}>
+      <ScrollView>
       <View style={styles.header}>
         <Text style={styles.stationName}>{station.title}</Text>
         <Text style={styles.rating}>⭐ {station.rating.toFixed(1)}</Text>
         <Text style={styles.subHeader}>{station.address}</Text>
+      </View>
+
+      {/* Static Map Preview */}
+      <View style={styles.mapPreviewWrapper}>
+        <MapView
+          style={styles.mapPreview}
+          provider={PROVIDER_GOOGLE}
+          pointerEvents="none"
+          initialRegion={{
+            latitude: station.latitude,
+            longitude: station.longitude,
+            latitudeDelta: 0.02,
+            longitudeDelta: 0.02,
+          }}
+          googleMapId="508c49184e5a4073b3a02f38"
+          customMapStyle={mapDarkStyle as any}
+        >
+          <Marker
+            coordinate={{ latitude: station.latitude, longitude: station.longitude }}
+            title={station.title}
+            pinColor="wheat"
+          />
+        </MapView>
       </View>
 
       <View style={styles.section}>
@@ -92,7 +119,8 @@ export default function StationProfileScreen({ navigation, route }: Props) {
         </TouchableOpacity>
         {/* Removed Directions and Plan a Trip actions per new UX spec */}
       </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -146,6 +174,20 @@ const styles = StyleSheet.create({
   buttonContainer: {
     padding: 20,
     gap: 12,
+  },
+  mapPreviewWrapper: {
+    height: 160,
+    marginHorizontal: 20,
+    marginTop: 12,
+    marginBottom: 8,
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#08121a',
+    backgroundColor: '#050A10',
+  },
+  mapPreview: {
+    flex: 1,
   },
   primaryButton: {
     backgroundColor: '#46F98C',

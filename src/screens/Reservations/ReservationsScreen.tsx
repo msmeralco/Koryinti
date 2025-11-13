@@ -1,12 +1,6 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  Image,
-} from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 const CarImage = require('../../../assets/carimage.png');
@@ -119,7 +113,7 @@ export default function ReservationsScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top','left','right']}>
       <FlatList
         data={MOCK_RESERVATIONS}
         keyExtractor={(item) => item.id}
@@ -136,7 +130,7 @@ export default function ReservationsScreen() {
           </View>
         }
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
