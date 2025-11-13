@@ -5,6 +5,7 @@ import { RootStackParamList } from '@/types/navigation';
 import RegistrationScreen from '@/screens/Auth/RegistrationScreen';
 import AddVehicleScreen from '@/screens/Auth/AddVehicleScreen';
 import MainTabsNavigator from './MainTabsNavigator';
+import AdminDashboard from '@/screens/Admin/AdminDashboard';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -25,6 +26,7 @@ export default function RootNavigator() {
         <Stack.Screen name="Registration" component={RegistrationScreen} />
         <Stack.Screen name="AddVehicle" component={AddVehicleScreen} />
         <Stack.Screen name="MainTabs" component={MainTabsNavigator} />
+        <Stack.Screen name="AdminDashboard" component={AdminDashboard} />
       </Stack.Navigator>
     </NavigationContainer>
   );

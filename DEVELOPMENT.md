@@ -14,23 +14,28 @@ A React Native mobile application for finding, reserving, and managing electric 
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/anneryeo/Revolt.git
    cd Revolt
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Configure environment variables**
+
    ```bash
    cp .env.example .env
    ```
+
    Edit `.env` and add your API keys (see [Security](#-security) section)
 
 4. **Start the development server**
+
    ```bash
    npm start
    ```
@@ -42,6 +47,7 @@ A React Native mobile application for finding, reserving, and managing electric 
 ## 📱 App Flow
 
 ### User Journey
+
 1. **Registration** → Simple welcome screen (MVP: no full auth)
 2. **Add Vehicle** → Optional vehicle information
 3. **Main App** → Three main sections:
@@ -50,6 +56,7 @@ A React Native mobile application for finding, reserving, and managing electric 
    - **Profile**: Manage account settings
 
 ### Map Features
+
 - **Find Nearby Stations**: Browse charging stations by proximity
 - **Station Profile**: View details, availability, pricing, amenities
 - **Reserve**: Select time slot and duration
@@ -102,18 +109,21 @@ Revolt/
 ### Code Quality Standards
 
 **ESLint** automatically checks for:
+
 - Code style consistency
 - Potential bugs and errors
 - React/React Native best practices
 - TypeScript type safety
 
 **Prettier** enforces:
+
 - Consistent formatting
 - 100 character line width
 - Single quotes, semicolons
 - 2-space indentation
 
 ### Pre-commit Checklist
+
 ```bash
 npm run lint        # Check for linting errors
 npm run type-check  # Verify TypeScript types
@@ -134,6 +144,7 @@ main              # Production-ready code
 ### Working on a New Screen
 
 1. **Create a feature branch**
+
    ```bash
    git checkout -b feature/payment-screen
    ```
@@ -144,12 +155,14 @@ main              # Production-ready code
    - Add docstrings for major functions
 
 3. **Test your changes**
+
    ```bash
    npm start
    # Test on Expo Go
    ```
 
 4. **Commit with clear messages**
+
    ```bash
    git add .
    git commit -m "feat: add payment processing screen"
@@ -174,6 +187,7 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/):
 - `chore:` Maintenance tasks
 
 **Examples:**
+
 ```bash
 git commit -m "feat: add station reservation confirmation"
 git commit -m "fix: resolve navigation back button issue"
@@ -187,6 +201,7 @@ git commit -m "docs: update API integration guide"
 **Never commit sensitive data!** All API keys and secrets must be stored in `.env` file.
 
 **Setup:**
+
 1. Copy `.env.example` to `.env`
 2. Add your API keys:
    ```env
@@ -197,6 +212,7 @@ git commit -m "docs: update API integration guide"
 3. `.env` is in `.gitignore` and will NOT be committed
 
 **Using environment variables in code:**
+
 ```typescript
 import { GOOGLE_MAPS_API_KEY } from '@env';
 
@@ -207,6 +223,7 @@ const apiKey = GOOGLE_MAPS_API_KEY;
 ### Security Best Practices
 
 ✅ **DO:**
+
 - Use `.env` for all API keys and secrets
 - Keep dependencies updated (`npm audit`)
 - Review code before merging PRs
@@ -214,6 +231,7 @@ const apiKey = GOOGLE_MAPS_API_KEY;
 - Validate user inputs
 
 ❌ **DON'T:**
+
 - Hardcode API keys in source code
 - Commit `.env` file to Git
 - Store passwords or tokens in code
@@ -222,11 +240,13 @@ const apiKey = GOOGLE_MAPS_API_KEY;
 ### API Key Protection
 
 **Google Maps API Key:**
+
 - Restrict to specific platforms (iOS/Android)
 - Set up billing alerts
 - Rotate keys periodically
 
 **Payment Keys (Stripe):**
+
 - Use test keys for development
 - Use publishable keys only (never secret keys in app)
 - Implement server-side payment processing
@@ -236,6 +256,7 @@ const apiKey = GOOGLE_MAPS_API_KEY;
 GitHub Actions automatically runs on every push and PR:
 
 ### Automated Checks
+
 1. **Linting** - ESLint code quality checks
 2. **Type Checking** - TypeScript validation
 3. **Formatting** - Prettier style verification
@@ -245,6 +266,7 @@ GitHub Actions automatically runs on every push and PR:
 ### Pipeline Status
 
 Pipeline must pass before merging to `main` or `develop`:
+
 - ✅ All checks passed → Ready to merge
 - ❌ Checks failed → Fix issues before merging
 
@@ -271,10 +293,11 @@ export default function StationProfileScreen({ navigation, route }: Props) {
 ### Adding New Navigation Screens
 
 1. Add route to type definition in `src/types/navigation.ts`:
+
    ```typescript
    export type MapStackParamList = {
      NewScreen: { userId: string }; // with params
-     AnotherScreen: undefined;      // no params
+     AnotherScreen: undefined; // no params
    };
    ```
 
@@ -297,16 +320,19 @@ Currently MVP focused. Future testing strategy:
 ### Expo EAS Build (Recommended)
 
 1. Install EAS CLI:
+
    ```bash
    npm install -g eas-cli
    ```
 
 2. Login to Expo:
+
    ```bash
    eas login
    ```
 
 3. Configure build:
+
    ```bash
    eas build:configure
    ```
@@ -328,22 +354,26 @@ Currently MVP focused. Future testing strategy:
 ### Common Issues
 
 **Metro bundler cache issues:**
+
 ```bash
 npx expo start --clear
 ```
 
 **Dependencies not installing:**
+
 ```bash
 rm -rf node_modules package-lock.json
 npm install
 ```
 
 **Type errors after adding dependencies:**
+
 ```bash
 npm run type-check
 ```
 
 **Expo Go connection issues:**
+
 - Ensure phone and computer are on same network
 - Disable VPN if active
 - Try tunnel mode: `npx expo start --tunnel`

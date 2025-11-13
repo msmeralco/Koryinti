@@ -1,21 +1,16 @@
-import React, { lazy, useEffect, useState, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  Animated,
-} from 'react-native';
+import React, { useState, useEffect, lazy, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Animated } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import MapView, { Circle, Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
-import CircleMarker from 'react-native-maps';
 import { MapStackParamList, EnrichedStation } from '@/types/navigation';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { OPENCHARGEMAP_API_KEY } from '@env';
 import mapDarkStyle from './mapDarkStyle.json';
 
 type Props = NativeStackScreenProps<MapStackParamList, 'MapHome'>;
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const EVCarIcon = require('../../../assets/evcaricon.png');
 
 type ChargingMarker = {
   id: string;
@@ -25,22 +20,18 @@ type ChargingMarker = {
   address: string;
 };
 
-const EVCarIcon = require('../../../assets/evcaricon.png');
-
 export default function MapHomeScreen({ navigation }: Props) {
-
-  const [region] = useState({
-    latitude: 15.809468984985767,
-    longitude: 121.44006445079778,
-    latitudeDelta: 20.8,
-    longitudeDelta: 20.6,
-  });
-
-
   const [markers, setMarkers] = useState<ChargingMarker[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [rawPOIs, setRawPOIs] = useState<any[]>([]); // store full API data for enrichment
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [region] = useState({
+    latitude: 14.5995,
+    longitude: 120.9842,
+    latitudeDelta: 0.15,
+    longitudeDelta: 0.15,
+  });
   const userLocation = { latitude: 14.59144955737441, longitude: 121.06729986080205 };
   const pulseScale = useRef(new Animated.Value(0)).current;
   const pulseOpacity = useRef(new Animated.Value(1)).current;
@@ -87,6 +78,7 @@ export default function MapHomeScreen({ navigation }: Props) {
         setRawPOIs(data);
 
         const mapped: ChargingMarker[] = (data || [])
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .map((item: any) => {
             const a = item?.AddressInfo;
             if (!a || a?.Latitude == null || a?.Longitude == null) return null;
@@ -101,9 +93,9 @@ export default function MapHomeScreen({ navigation }: Props) {
           .filter(Boolean) as ChargingMarker[];
 
         setMarkers(mapped);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to load OpenChargeMap POIs', err);
-        setError(err.message ?? String(err));
+        setError(err instanceof Error ? err.message : String(err));
       } finally {
         setLoading(false);
       }
@@ -250,7 +242,7 @@ export default function MapHomeScreen({ navigation }: Props) {
 
   return (
     <View style={styles.screen}>
-      {/* Top “map” area (just dark for now) */}
+      {/* Top "map" area */}
       <View style={styles.mapArea}>
         <MapView
           style={StyleSheet.absoluteFill}
@@ -286,7 +278,7 @@ export default function MapHomeScreen({ navigation }: Props) {
               <View style={styles.userMarkerCore} />
             </View>
           </Marker>
-          {markers.map((m) => (
+          {markers.map(m => (
             <Marker
               key={`ocm-${m.id}`}
               coordinate={{ latitude: m.latitude, longitude: m.longitude }}
@@ -297,7 +289,6 @@ export default function MapHomeScreen({ navigation }: Props) {
           ))}
         </MapView>
       </View>
-
 
       {/* Bottom content */}
       <View style={styles.bottomContent}>
@@ -310,17 +301,14 @@ export default function MapHomeScreen({ navigation }: Props) {
             <Text style={styles.greetingText}>Welcome back!</Text>
 
             <View style={styles.infoRow}>
-              <Text style={styles.infoText}>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+              <Text style={styles.infoText}>
+                {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </Text>
             </View>
 
             <View style={styles.infoRow}>
               <Text style={styles.infoText}>28°C</Text>
-              <Ionicons
-                name="sunny-outline"
-                size={16}
-                color="#C6CFD7"
-                style={{ marginLeft: 6 }}
-              />
+              <Ionicons name="sunny-outline" size={16} color="#C6CFD7" style={{ marginLeft: 6 }} />
             </View>
 
             <View style={styles.batteryPill}>
@@ -341,7 +329,8 @@ export default function MapHomeScreen({ navigation }: Props) {
               const userLng = 121.06621291296217;
 
               const enriched: EnrichedStation[] = rawPOIs
-                .map(poi => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                .map((poi: any) => {
                   const a = poi?.AddressInfo;
                   if (!a) return null;
                   const lat = a.Latitude;
@@ -351,19 +340,29 @@ export default function MapHomeScreen({ navigation }: Props) {
                   const totalPlugs = connections.length || 1; // fallback at least 1
                   const plugsInUse = Math.floor(Math.random() * totalPlugs);
                   const availablePlugs = Math.max(totalPlugs - plugsInUse, 0);
-                  const plugTypes = connections.map((c: any) => c.ConnectionType?.Title).filter(Boolean);
-                  const powerKW = connections.reduce((sum: number, c: any) => sum + (c.PowerKW || 0), 0) || 0;
+                  const plugTypes = connections
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    .map((c: any) => c.ConnectionType?.Title)
+                    .filter(Boolean);
+                  const powerKW =
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    connections.reduce((sum: number, c: any) => sum + (c.PowerKW || 0), 0) || 0;
                   // Haversine distance
                   const R = 6371; // km
-                  const dLat = (lat - userLat) * Math.PI / 180;
-                  const dLng = (lng - userLng) * Math.PI / 180;
-                  const aHarv = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(userLat * Math.PI / 180) * Math.cos(lat * Math.PI / 180) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+                  const dLat = ((lat - userLat) * Math.PI) / 180;
+                  const dLng = ((lng - userLng) * Math.PI) / 180;
+                  const aHarv =
+                    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                    Math.cos((userLat * Math.PI) / 180) *
+                      Math.cos((lat * Math.PI) / 180) *
+                      Math.sin(dLng / 2) *
+                      Math.sin(dLng / 2);
                   const cHarv = 2 * Math.atan2(Math.sqrt(aHarv), Math.sqrt(1 - aHarv));
                   const distanceKm = R * cHarv;
                   const avgSpeedKmh = 30; // heuristic urban speed
                   const driveMinutes = (distanceKm / avgSpeedKmh) * 60;
-                  const rating = +((Math.random() * 1.5) + 3.5).toFixed(1); // 3.5 - 5.0
-                  const pricePerKWh = +((Math.random() * 10) + 15).toFixed(2); // synthetic PHP price
+                  const rating = +(Math.random() * 1.5 + 3.5).toFixed(1); // 3.5 - 5.0
+                  const pricePerKWh = +(Math.random() * 10 + 15).toFixed(2); // synthetic PHP price
                   const amenities = {
                     wifi: Math.random() > 0.5,
                     bathroom: Math.random() > 0.4,
@@ -417,4 +416,3 @@ export default function MapHomeScreen({ navigation }: Props) {
     </View>
   );
 }
-

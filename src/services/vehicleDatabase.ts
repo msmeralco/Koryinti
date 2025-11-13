@@ -36,6 +36,7 @@ export const EV_DATABASE: VehicleSpec[] = [
     range: 484,
     chargingSpeed: 'Fast',
   },
+
   { make: 'Hyundai', model: 'Ioniq 5', batteryCapacity: 77, range: 481, chargingSpeed: 'Fast' },
   { make: 'Hyundai', model: 'Ioniq 6', batteryCapacity: 77, range: 614, chargingSpeed: 'Fast' },
 

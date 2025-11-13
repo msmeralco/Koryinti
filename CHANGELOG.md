@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - Initial project setup with Expo and React Native
 - Complete navigation structure (Root, Tabs, Map stack)
 - 14 MVP screens covering full user flow
@@ -20,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - VS Code workspace configuration
 
 ### Screens Implemented
+
 - Registration & Add Vehicle (Auth flow)
 - Map Home with Find Nearby / Plan Trip
 - Nearby Stations list
@@ -35,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reservations history
 
 ### Developer Experience
+
 - Auto-formatting on save
 - Pre-commit linting checks
 - TypeScript IntelliSense
@@ -47,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Initial MVP release planned.
 
 ### Planned Features
+
 - Backend API integration
 - Real Google Maps implementation
 - Actual QR code scanning
@@ -60,19 +64,25 @@ Initial MVP release planned.
 ## Version History Guidelines
 
 ### Added
+
 For new features
 
 ### Changed
+
 For changes in existing functionality
 
 ### Deprecated
+
 For soon-to-be removed features
 
 ### Removed
+
 For now removed features
 
 ### Fixed
+
 For bug fixes
 
 ### Security
+
 For security fixes

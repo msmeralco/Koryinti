@@ -48,6 +48,19 @@ module.exports = tseslint.config(
     },
   },
   {
+    // Allow CommonJS for .cjs files
+    files: ['**/*.cjs'],
+    languageOptions: {
+      sourceType: 'commonjs',
+      globals: {
+        ...globals.node,
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
+    },
+  },
+  {
     ignores: [
       'node_modules/**',
       '.expo/**',
@@ -55,6 +68,7 @@ module.exports = tseslint.config(
       'build/**',
       '*.config.js',
       'babel.config.js',
+      '*.cjs',
     ],
   }
 );

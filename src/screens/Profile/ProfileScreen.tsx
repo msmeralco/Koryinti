@@ -1,12 +1,17 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-
+import { useNavigation } from '@react-navigation/native';
 /**
  * ProfileScreen displays user information and app settings.
  * For MVP, this shows placeholder information without full user management.
  */
 export default function ProfileScreen() {
+  const navigation = useNavigation<any>();
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+    >
+      {/* HEADER */}
       <View style={styles.header}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>JD</Text>
@@ -15,28 +20,38 @@ export default function ProfileScreen() {
         <Text style={styles.email}>john.doe@example.com</Text>
       </View>
 
+      {/* VEHICLES */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>My Vehicles</Text>
         <View style={styles.vehicleCard}>
-          <Text style={styles.vehicleName}>Tesla Model 3</Text>
-          <Text style={styles.vehicleDetails}>2023 • Long Range</Text>
+          <View>
+            <Text style={styles.vehicleName}>Tesla Model 3</Text>
+            <Text style={styles.vehicleDetails}>2023 • Long Range</Text>
+          </View>
+          <View style={styles.defaultBadgePill}>
+            <Text style={styles.defaultBadgeText}>Primary</Text>
+          </View>
         </View>
         <TouchableOpacity style={styles.addButton}>
           <Text style={styles.addButtonText}>+ Add Vehicle</Text>
         </TouchableOpacity>
       </View>
 
+      {/* PAYMENT METHODS */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Payment Methods</Text>
         <View style={styles.paymentCard}>
           <Text style={styles.paymentText}>💳 •••• 4242</Text>
-          <Text style={styles.defaultBadge}>Default</Text>
+          <View style={styles.defaultBadgePill}>
+            <Text style={styles.defaultBadgeText}>Default</Text>
+          </View>
         </View>
         <TouchableOpacity style={styles.addButton}>
           <Text style={styles.addButtonText}>+ Add Payment Method</Text>
         </TouchableOpacity>
       </View>
 
+      {/* SETTINGS */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Settings</Text>
         <TouchableOpacity style={styles.menuItem}>
@@ -51,8 +66,13 @@ export default function ProfileScreen() {
           <Text style={styles.menuText}>Help & Support</Text>
           <Text style={styles.menuArrow}>›</Text>
         </TouchableOpacity>
+        <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('AdminDashboard')}>
+          <Text style={styles.menuText}>Admin Dashboard</Text>
+          <Text style={styles.menuArrow}>›</Text>
+        </TouchableOpacity>
       </View>
 
+      {/* LOGOUT */}
       <TouchableOpacity style={styles.logoutButton}>
         <Text style={styles.logoutText}>Log Out</Text>
       </TouchableOpacity>
@@ -60,125 +80,148 @@ export default function ProfileScreen() {
   );
 }
 
+const GREEN = '#00F470';
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#020617', // deep dark to match app
+  },
+  contentContainer: {
+    paddingBottom: 32,
   },
   header: {
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    paddingVertical: 30,
+    paddingTop: 40,
+    paddingBottom: 24,
     paddingHorizontal: 20,
+    alignItems: 'center',
+    backgroundColor: '#050816',
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#111827',
   },
   avatar: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#4CAF50',
+    backgroundColor: GREEN,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 16,
   },
   avatarText: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#000000',
   },
   name: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 5,
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#F9FAFB',
+    marginBottom: 4,
   },
   email: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: 14,
+    color: '#9CA3AF',
   },
   section: {
-    backgroundColor: '#fff',
-    marginTop: 20,
-    padding: 20,
+    backgroundColor: '#050816',
+    marginTop: 16,
+    marginHorizontal: 16,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#111827',
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 15,
-  },
-  vehicleCard: {
-    padding: 15,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 8,
-    marginBottom: 10,
-  },
-  vehicleName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
-    marginBottom: 5,
+    color: '#E5E7EB',
+    marginBottom: 12,
+  },
+  vehicleCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 14,
+    backgroundColor: '#020617',
+    borderRadius: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#111827',
+  },
+  vehicleName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#F9FAFB',
+    marginBottom: 4,
   },
   vehicleDetails: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 13,
+    color: '#9CA3AF',
   },
   paymentCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 15,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 8,
-    marginBottom: 10,
+    padding: 14,
+    backgroundColor: '#020617',
+    borderRadius: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#111827',
   },
   paymentText: {
-    fontSize: 16,
-    color: '#333',
+    fontSize: 15,
+    color: '#F9FAFB',
   },
-  defaultBadge: {
-    fontSize: 12,
-    color: '#4CAF50',
+  defaultBadgePill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: 'rgba(0, 244, 112, 0.12)',
+  },
+  defaultBadgeText: {
+    fontSize: 11,
     fontWeight: '600',
+    color: GREEN,
   },
   addButton: {
-    paddingVertical: 12,
-    alignItems: 'center',
+    paddingTop: 8,
   },
   addButtonText: {
-    fontSize: 16,
-    color: '#4CAF50',
+    fontSize: 14,
     fontWeight: '600',
+    color: GREEN,
   },
   menuItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#111827',
   },
   menuText: {
-    fontSize: 16,
-    color: '#333',
+    fontSize: 15,
+    color: '#E5E7EB',
   },
   menuArrow: {
-    fontSize: 24,
-    color: '#ccc',
+    fontSize: 20,
+    color: '#4B5563',
   },
   logoutButton: {
-    margin: 20,
-    paddingVertical: 15,
-    backgroundColor: '#fff',
-    borderRadius: 8,
+    marginTop: 24,
+    marginHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: '#ff5252',
+    borderColor: '#F97373',
+    backgroundColor: '#111827',
   },
   logoutText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
-    color: '#ff5252',
+    color: '#F97373',
     textAlign: 'center',
   },
 });
