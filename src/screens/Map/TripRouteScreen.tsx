@@ -153,7 +153,12 @@ export default function TripRouteScreen({ navigation, route }: Props) {
       <View style={[styles.container, styles.centered]}>
         <Text style={styles.errorText}>❌ {error || 'Unable to calculate route'}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back-outline" size={18} color="#050816" style={{ marginRight: 6 }} />
+          <Ionicons
+            name="arrow-back-outline"
+            size={18}
+            color="#050816"
+            style={{ marginRight: 6 }}
+          />
           <Text style={styles.retryButtonText}>Go back</Text>
         </TouchableOpacity>
       </View>
@@ -206,131 +211,136 @@ export default function TripRouteScreen({ navigation, route }: Props) {
         />
       </MapView>
 
-      <View style={styles.bottomSheet}>
+      <View style={[styles.bottomSheet, isDetailsCollapsed && styles.bottomSheetCollapsed]}>
+        {/* Toggle button */}
+        <TouchableOpacity
+          style={styles.toggleButton}
+          onPress={() => setIsDetailsCollapsed(!isDetailsCollapsed)}
+        >
+          <Text style={styles.toggleButtonText}>
+            {isDetailsCollapsed ? '▲ Show Route Details' : '▼ Hide to View Map'}
+          </Text>
+        </TouchableOpacity>
+
         <View style={styles.handle} />
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          <View style={styles.headerRow}>
-            <View style={styles.headerTextWrap}>
-              <Text style={styles.title}>Suggested route</Text>
-              <Text style={styles.subtitle} numberOfLines={1}>
-                {fromLabel}
-              </Text>
-              <Text style={styles.subtitle} numberOfLines={1}>
-                → {toLabel}
-              </Text>
-            </View>
-            <View style={styles.titleIconWrapper}>
-              <Ionicons name="map-outline" size={22} color={ACCENT_GREEN} />
-            </View>
-          </View>
 
-          {/* Quick Stats */}
-          <View style={styles.quickStats}>
-            <View style={styles.statItem}>
-              <Ionicons name="speedometer-outline" size={18} color={ACCENT_GREEN} />
-              <Text style={styles.statValue}>{detailedRoute.totalDistance} km</Text>
-              <Text style={styles.statLabel}>Distance</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Ionicons name="time-outline" size={18} color={ACCENT_GREEN} />
-              <Text style={styles.statValue}>
-                {Math.floor(detailedRoute.totalDuration / 60)}h {detailedRoute.totalDuration % 60}m
-              </Text>
-              <Text style={styles.statLabel}>Total time</Text>
-            </View>
-            <View style={styles.statItem}>
-              <MaterialCommunityIcons
-                name="battery-charging-80"
-                size={18}
-                color={ACCENT_GREEN}
-              />
-              <Text style={styles.statValue}>{detailedRoute.chargingStops.length}</Text>
-              <Text style={styles.statLabel}>Charging stops</Text>
-            </View>
-          </View>
-
-          {/* Route Details */}
-          <Text style={styles.sectionTitle}>Route details</Text>
-          {detailedRoute.segments.map(segment => (
-            <RouteSegmentCard key={segment.id} segment={segment} />
-          ))}
-
-          {/* Cost Summary */}
-          {detailedRoute.chargingStops.length > 0 && (
-            <>
-              <View style={styles.divider} />
-              <Text style={styles.sectionTitle}>Cost summary</Text>
-              <View style={styles.costSummary}>
-                <View style={styles.costRow}>
-                  <Text style={styles.costLabel}>Total distance</Text>
-                  <Text style={styles.costValue}>{detailedRoute.totalDistance} km</Text>
-                </View>
-                <View style={styles.costRow}>
-                  <Text style={styles.costLabel}>Total travel time</Text>
-                  <Text style={styles.costValue}>
-                    {Math.floor(detailedRoute.totalTravelTime / 60)}h{' '}
-                    {detailedRoute.totalTravelTime % 60}m
+        {!isDetailsCollapsed && (
+          <>
+            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+              <View style={styles.headerRow}>
+                <View style={styles.headerTextWrap}>
+                  <Text style={styles.title}>Suggested route</Text>
+                  <Text style={styles.subtitle} numberOfLines={1}>
+                    {fromLabel}
+                  </Text>
+                  <Text style={styles.subtitle} numberOfLines={1}>
+                    → {toLabel}
                   </Text>
                 </View>
-                <View style={styles.costRow}>
-                  <Text style={styles.costLabel}>Charging time</Text>
-                  <Text style={styles.costValue}>{detailedRoute.totalChargingTime} min</Text>
-                </View>
-                <View style={styles.dividerThin} />
-                <View style={styles.costRow}>
-                  <Text style={styles.costLabel}>Charging cost</Text>
-                  <Text style={styles.costValue}>
-                    ₱{detailedRoute.costBreakdown.chargingCost.toFixed(2)}
-                  </Text>
-                  <Text style={styles.statLabel}>Total Time</Text>
-                </View>
-                <View style={styles.costRow}>
-                  <Text style={styles.costLabel}>Booking fee (2%)</Text>
-                  <Text style={styles.costValue}>
-                    ₱{detailedRoute.costBreakdown.bookingFee.toFixed(2)}
-                  </Text>
-                </View>
-                <View style={styles.dividerThin} />
-                <View style={styles.costRow}>
-                  <Text style={styles.costLabelBold}>Total cost</Text>
-                  <Text style={styles.costValueBold}>
-                    ₱{detailedRoute.costBreakdown.totalCost.toFixed(2)}
-                  </Text>
+                <View style={styles.titleIconWrapper}>
+                  <Ionicons name="map-outline" size={22} color={ACCENT_GREEN} />
                 </View>
               </View>
 
-              <TouchableOpacity style={styles.reserveButton} onPress={handleReserveChargers}>
-                <Ionicons
-                  name="flash-outline"
-                  size={18}
-                  color="#050816"
-                  style={{ marginRight: 6 }}
-                />
-                <Text style={styles.reserveButtonText}>Reserve chargers</Text>
-              </TouchableOpacity>
-            </>
-          )}
+              {/* Quick Stats */}
+              <View style={styles.quickStats}>
+                <View style={styles.statItem}>
+                  <Ionicons name="speedometer-outline" size={18} color={ACCENT_GREEN} />
+                  <Text style={styles.statValue}>{detailedRoute.totalDistance} km</Text>
+                  <Text style={styles.statLabel}>Distance</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Ionicons name="time-outline" size={18} color={ACCENT_GREEN} />
+                  <Text style={styles.statValue}>
+                    {Math.floor(detailedRoute.totalDuration / 60)}h{' '}
+                    {detailedRoute.totalDuration % 60}m
+                  </Text>
+                  <Text style={styles.statLabel}>Total time</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <MaterialCommunityIcons
+                    name="battery-charging-80"
+                    size={18}
+                    color={ACCENT_GREEN}
+                  />
+                  <Text style={styles.statValue}>{detailedRoute.chargingStops.length}</Text>
+                  <Text style={styles.statLabel}>Charging stops</Text>
+                </View>
+              </View>
 
-          {detailedRoute.chargingStops.length === 0 && (
-            <View style={styles.noChargingNeeded}>
-              <Ionicons
-                name="checkmark-circle-outline"
-                size={22}
-                color={ACCENT_GREEN}
-                style={{ marginBottom: 4 }}
-              />
-              <Text style={styles.noChargingText}>No charging needed</Text>
-              <Text style={styles.noChargingSubtext}>
-                Your current battery is sufficient for this trip.
-              </Text>
-            </View>
-          )}
+              {/* Route Details */}
+              <Text style={styles.sectionTitle}>Route details</Text>
+              {detailedRoute.segments.map(segment => (
+                <RouteSegmentCard key={segment.id} segment={segment} />
+              ))}
+
+              {/* Cost Summary */}
+              {detailedRoute.chargingStops.length > 0 && (
+                <>
+                  <View style={styles.divider} />
+                  <Text style={styles.sectionTitle}>Cost summary</Text>
+                  <View style={styles.costSummary}>
+                    <View style={styles.costRow}>
+                      <Text style={styles.costLabel}>Total distance</Text>
+                      <Text style={styles.costValue}>{detailedRoute.totalDistance} km</Text>
+                    </View>
+                    <View style={styles.costRow}>
+                      <Text style={styles.costLabel}>Total travel time</Text>
+                      <Text style={styles.costValue}>
+                        {Math.floor(detailedRoute.totalTravelTime / 60)}h{' '}
+                        {detailedRoute.totalTravelTime % 60}m
+                      </Text>
+                    </View>
+                    <View style={styles.costRow}>
+                      <Text style={styles.costLabel}>Charging time</Text>
+                      <Text style={styles.costValue}>{detailedRoute.totalChargingTime} min</Text>
+                    </View>
+                    <View style={styles.dividerThin} />
+                    <View style={styles.costRow}>
+                      <Text style={styles.costLabel}>Charging cost</Text>
+                      <Text style={styles.costValue}>
+                        ₱{detailedRoute.costBreakdown.chargingCost.toFixed(2)}
+                      </Text>
+                      <Text style={styles.statLabel}>Total Time</Text>
+                    </View>
+                    <View style={styles.costRow}>
+                      <Text style={styles.costLabel}>Booking fee (2%)</Text>
+                      <Text style={styles.costValue}>
+                        ₱{detailedRoute.costBreakdown.bookingFee.toFixed(2)}
+                      </Text>
+                    </View>
+                    <View style={styles.dividerThin} />
+                    <View style={styles.costRow}>
+                      <Text style={styles.costLabelBold}>Total cost</Text>
+                      <Text style={styles.costValueBold}>
+                        ₱{detailedRoute.costBreakdown.totalCost.toFixed(2)}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <TouchableOpacity style={styles.reserveButton} onPress={handleReserveChargers}>
+                    <Ionicons
+                      name="flash-outline"
+                      size={18}
+                      color="#050816"
+                      style={{ marginRight: 6 }}
+                    />
+                    <Text style={styles.reserveButtonText}>Reserve chargers</Text>
+                  </TouchableOpacity>
+                </>
+              )}
 
               {detailedRoute.chargingStops.length === 0 && (
                 <View style={styles.noChargingNeeded}>
-                  <Text style={styles.noChargingText}>✅ No charging needed!</Text>
+                  <Ionicons
+                    name="checkmark-circle-outline"
+                    size={22}
+                    color={ACCENT_GREEN}
+                    style={{ marginBottom: 4 }}
+                  />
+                  <Text style={styles.noChargingText}>No charging needed</Text>
                   <Text style={styles.noChargingSubtext}>
-                    Your battery is sufficient for this trip
+                    Your current battery is sufficient for this trip.
                   </Text>
                 </View>
               )}
@@ -508,15 +518,17 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     paddingVertical: 8,
     paddingHorizontal: 16,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: 'rgba(0,244,112,0.08)',
     borderRadius: 20,
     marginTop: 5,
     marginBottom: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(0,244,112,0.3)',
   },
   toggleButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#4CAF50',
+    color: '#00F470',
   },
   handle: {
     width: 50,

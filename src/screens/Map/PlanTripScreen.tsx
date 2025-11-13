@@ -198,9 +198,7 @@ export default function PlanTripScreen({ navigation }: Props) {
             <View style={styles.headerRow}>
               <View>
                 <Text style={styles.title}>Plan your EV trip</Text>
-                <Text style={styles.subtitle}>
-                  Set your route and find chargers along the way.
-                </Text>
+                <Text style={styles.subtitle}>Set your route and find chargers along the way.</Text>
               </View>
               <View style={styles.titleIconWrapper}>
                 <Ionicons name="trail-sign-outline" size={24} color="#00F470" />
@@ -260,32 +258,9 @@ export default function PlanTripScreen({ navigation }: Props) {
                     )}
                     style={styles.suggestionsList}
                   />
-                  {searchingTo && (
-                    <View style={styles.loadingContainer}>
-                      <ActivityIndicator size="small" color="#4CAF50" />
-                    </View>
-                  )}
-                  {toSuggestions.length > 0 && activeField === 'to' && (
-                    <View style={styles.suggestionsContainer}>
-                      <FlatList
-                        data={toSuggestions}
-                        keyExtractor={item => item.place_id.toString()}
-                        keyboardShouldPersistTaps="handled"
-                        renderItem={({ item }) => (
-                          <TouchableOpacity
-                            style={styles.suggestionItem}
-                            onPress={() => selectToSuggestion(item)}
-                          >
-                            <Text style={styles.suggestionText}>
-                              📍 {formatDisplayName(item.display_name)}
-                            </Text>
-                          </TouchableOpacity>
-                        )}
-                        style={styles.suggestionsList}
-                      />
-                    </View>
-                  )}
                 </View>
+              )}
+            </View>
 
             {/* TO */}
             <View style={styles.inputWrapper}>
@@ -308,7 +283,7 @@ export default function PlanTripScreen({ navigation }: Props) {
               <TextInput
                 style={styles.input}
                 placeholder="Search destination..."
-                placeholderTextColor="#6B7280"
+                placeholderTextColor="#9CA3AF"
                 value={to}
                 onChangeText={text => {
                   setTo(text);
@@ -333,17 +308,15 @@ export default function PlanTripScreen({ navigation }: Props) {
                         onPress={() => selectToSuggestion(item)}
                       >
                         <Text style={styles.suggestionText}>
-                          <Text>📍 </Text>
-                          {formatDisplayName(item.display_name)}
+                          📍 {formatDisplayName(item.display_name)}
                         </Text>
                       </TouchableOpacity>
                     )}
                     style={styles.suggestionsList}
                   />
-                  <Text style={styles.batteryHint}>
-                    Charging stations will be recommended if needed to reach this level
-                  </Text>
                 </View>
+              )}
+            </View>
 
             {/* Battery Level Input */}
             <View style={styles.batteryRow}>
@@ -457,14 +430,16 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     paddingVertical: 8,
     paddingHorizontal: 16,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: 'rgba(0,244,112,0.08)',
     borderRadius: 20,
     marginBottom: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(0,244,112,0.3)',
   },
   toggleButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#4CAF50',
+    color: '#00F470',
   },
   title: {
     fontSize: 20,
