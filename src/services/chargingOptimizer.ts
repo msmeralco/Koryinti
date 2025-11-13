@@ -14,6 +14,7 @@ import {
   CHARGING_TARGET_PERCENT,
   MINIMUM_BATTERY_BUFFER,
   interpolateChargeCurve,
+  PRICING,
 } from './standardVehicleModel';
 import { Station } from '@/types/navigation';
 
@@ -96,66 +97,99 @@ export function optimizeRoute(
   let distanceCovered = 0;
   let totalChargingTime = 0;
   let totalCost = 0;
+  const MAX_STOPS = 10; // Safety limit to prevent infinite loops
+  let stopCount = 0;
 
   // Apply traffic multiplier to consumption
   const effectiveConsumption =
     STANDARD_VEHICLE.avgConsumption * CONSUMPTION_MULTIPLIERS.demo * trafficMultiplier;
 
-  while (distanceCovered < totalDistance) {
+  while (distanceCovered < totalDistance && stopCount < MAX_STOPS) {
     // Calculate maximum range with current battery
+    // IMPORTANT: Use user's minimumArrival, not strategy's minStopSoC
+    // We should never let battery drop below the user's preference
+    const safeMinimum = Math.max(minimumArrival, strategy.minStopSoC);
     const availableEnergy =
-      ((currentSoC - strategy.minStopSoC) / 100) * STANDARD_VEHICLE.batteryCapacity;
+      ((currentSoC - safeMinimum) / 100) * STANDARD_VEHICLE.batteryCapacity;
     const maxRange = availableEnergy / effectiveConsumption;
     const remainingDistance = totalDistance - distanceCovered;
 
+    // Calculate what battery we'd have if we drove the remaining distance
+    const energyForRemainingDistance = remainingDistance * effectiveConsumption;
+    const batteryForRemainingDistance = (energyForRemainingDistance / STANDARD_VEHICLE.batteryCapacity) * 100;
+    const batteryAtDestinationIfNow = currentSoC - batteryForRemainingDistance;
+
     // Do we need a charging stop?
-    if (maxRange < remainingDistance) {
+    // Check if we can reach destination while maintaining minimum arrival battery
+    if (batteryAtDestinationIfNow < minimumArrival || maxRange < remainingDistance) {
       // Yes - calculate optimal stop location
       // ABRP strategy: Don't drain to absolute minimum, stop with buffer
       const targetStopDistance = maxRange * 0.85; // Stop before getting too low
-      const nextStopDistance = Math.min(targetStopDistance, remainingDistance);
+      
+      // Make sure we're making progress (minimum 10km per stop)
+      if (targetStopDistance < 10) {
+        console.warn('Cannot make progress - range too limited');
+        break;
+      }
 
-      distanceCovered += nextStopDistance;
+      const nextStopDistance = Math.min(targetStopDistance, remainingDistance);
+      const plannedStopLocation = distanceCovered + nextStopDistance;
 
       // Calculate battery at arrival
       const energyUsed = nextStopDistance * effectiveConsumption;
       const batteryUsed = (energyUsed / STANDARD_VEHICLE.batteryCapacity) * 100;
       const arrivalBattery = currentSoC - batteryUsed;
 
-      // Safety check
-      if (arrivalBattery < strategy.minStopSoC) {
-        console.warn('Route requires charging below safe minimum');
+      // Safety check - ensure we don't arrive below minimum
+      if (arrivalBattery < safeMinimum) {
+        console.warn('Route requires charging below safe minimum:', arrivalBattery, '<', safeMinimum);
         break;
       }
 
       // Find best station for this strategy
-      const station = selectBestStation(availableStations, distanceCovered, strategy, strategyType);
+      const station = selectBestStation(availableStations, plannedStopLocation, strategy, strategyType);
 
       if (!station) {
-        console.warn('No suitable station found at', distanceCovered, 'km');
+        console.warn('No suitable station found at', plannedStopLocation, 'km');
         break;
       }
 
       // Calculate optimal departure SoC
-      const remainingAfterStop = totalDistance - distanceCovered;
+      const remainingAfterStop = totalDistance - plannedStopLocation;
       const energyNeededToDestination =
         remainingAfterStop * effectiveConsumption +
         (minimumArrival / 100) * STANDARD_VEHICLE.batteryCapacity;
       const socNeededToDestination =
         (energyNeededToDestination / STANDARD_VEHICLE.batteryCapacity) * 100;
 
-      // Target SoC: enough to reach destination OR strategy target, whichever is appropriate
+      // Target SoC: MUST be enough to reach destination with minimumArrival
+      // But also consider strategy preferences
       let targetSoC: number;
+      
+      // First, ensure we have enough to reach destination
+      const minimumRequired = socNeededToDestination + 5; // 5% safety buffer
+      
       if (remainingAfterStop < maxRange * 0.5) {
         // Close to destination - charge just enough + buffer
-        targetSoC = Math.min(socNeededToDestination + 10, strategy.targetSoC);
+        targetSoC = Math.max(minimumRequired, Math.min(socNeededToDestination + 10, strategy.targetSoC));
       } else {
-        // Long way to go - use strategy target
-        targetSoC = strategy.targetSoC;
+        // Long way to go - use strategy target, but ensure minimum requirement
+        targetSoC = Math.max(minimumRequired, strategy.targetSoC);
       }
 
-      // Cap at vehicle/station limits
-      const departureBattery = Math.min(targetSoC, CHARGING_TARGET_PERCENT);
+      // Cap at vehicle/station limits (but never below minimum required)
+      const departureBattery = Math.min(Math.max(targetSoC, minimumRequired), CHARGING_TARGET_PERCENT);
+
+      // Make sure we're actually charging (minimum 5% charge)
+      if (departureBattery - arrivalBattery < 5) {
+        console.warn('Charge amount too small, adjusting target to minimum viable');
+        // Force charge to at least minimum required
+        const forcedDeparture = Math.min(minimumRequired, CHARGING_TARGET_PERCENT);
+        if (forcedDeparture - arrivalBattery < 5) {
+          console.error('Cannot charge enough to continue journey safely');
+          break;
+        }
+      }
 
       // Calculate charging time using real charge curve
       const stationPower = Math.min(station.powerKW || 50, STANDARD_VEHICLE.maxChargingPower);
@@ -164,8 +198,8 @@ export function optimizeRoute(
       // Calculate energy and cost
       const energyAdded =
         ((departureBattery - arrivalBattery) / 100) * STANDARD_VEHICLE.batteryCapacity;
-      const pricePerKwh = station.pricePerKwh || 0;
-      const connectionFee = station.connectionFee || 25;
+      const pricePerKwh = station.pricePerKwh || PRICING.defaultPricePerKwh;
+      const connectionFee = station.connectionFee || PRICING.connectionFee;
       const energyCost = energyAdded * pricePerKwh;
       const cost = energyCost + connectionFee;
 
@@ -176,24 +210,28 @@ export function optimizeRoute(
         chargingTime,
         energyAdded,
         cost,
-        distanceFromStart: distanceCovered,
-        reasonForStop: determineStopReason(arrivalBattery, strategy, remainingAfterStop),
+        distanceFromStart: plannedStopLocation,
+        reasonForStop: determineStopReason(arrivalBattery, strategy, remainingAfterStop, minimumArrival),
       });
 
       totalChargingTime += chargingTime;
       totalCost += cost;
+      
+      // Update state for next iteration
       currentSoC = departureBattery;
+      distanceCovered = plannedStopLocation;
+      stopCount++;
     } else {
       // No charging needed - can reach destination
-      distanceCovered = totalDistance;
+      break;
     }
   }
 
-  const finalBattery =
-    currentSoC -
-    (((totalDistance - distanceCovered) * effectiveConsumption) /
-      STANDARD_VEHICLE.batteryCapacity) *
-      100;
+  // Calculate final battery at destination
+  const remainingToDestination = totalDistance - distanceCovered;
+  const energyToDestination = remainingToDestination * effectiveConsumption;
+  const batteryToDestination = (energyToDestination / STANDARD_VEHICLE.batteryCapacity) * 100;
+  const finalBattery = currentSoC - batteryToDestination;
 
   return {
     stops,
@@ -201,7 +239,7 @@ export function optimizeRoute(
     totalCost,
     totalDistance,
     strategy: strategyType,
-    finalBattery,
+    finalBattery: Math.max(finalBattery, 0),
   };
 }
 
@@ -260,9 +298,16 @@ function selectBestStation(
 function determineStopReason(
   arrivalBattery: number,
   strategy: ChargingStrategy,
-  remainingDistance: number
+  remainingDistance: number,
+  minimumArrival?: number
 ): string {
-  if (arrivalBattery < strategy.minStopSoC + 5) {
+  // Check if we're at or near the absolute minimum threshold
+  const absoluteMinimum = minimumArrival || strategy.minStopSoC;
+  
+  if (arrivalBattery < absoluteMinimum + 5) {
+    return 'Battery near minimum threshold';
+  }
+  if (arrivalBattery < strategy.minStopSoC + 10) {
     return 'Low battery - necessary stop';
   }
   if (remainingDistance > 200) {

@@ -21,8 +21,28 @@ type Props = NativeStackScreenProps<MapStackParamList, 'TripRoute'>;
 const ACCENT_GREEN = '#00F470';
 const MAX_LOCATION_LABEL_LENGTH = 48;
 
+// Strategy colors for visual differentiation
+const STRATEGY_COLORS = {
+  0: '#3B82F6', // Blue - Few long stops
+  1: '#10B981', // Green - Balanced
+  2: '#F59E0B', // Orange - Many short stops
+};
+
+const STRATEGY_NAMES = {
+  0: 'Few Long Stops',
+  1: 'Balanced',
+  2: 'Many Short Stops',
+};
+
 export default function TripRouteScreen({ navigation, route }: Props) {
-  const { from, to, currentBatteryPercent = 80, minimumArrivalBattery = 25 } = route.params;
+  const { 
+    from, 
+    to, 
+    currentBatteryPercent = 80, 
+    minimumArrivalBattery = 25,
+    chargingStrategy = 1,
+    departureTime,
+  } = route.params;
 
   const [detailedRoute, setDetailedRoute] = useState<DetailedRoute | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -75,6 +95,8 @@ export default function TripRouteScreen({ navigation, route }: Props) {
           preferFastChargers: true,
           maxDetourKm: 5,
           minimumArrivalBattery,
+          chargingStrategy,
+          trafficMultiplier: 1.0, // Will be calculated from departureTime if provided
         });
         if (mounted) {
           if (result.success && result.route) {
@@ -83,6 +105,7 @@ export default function TripRouteScreen({ navigation, route }: Props) {
               chargingStops: result.route.chargingStops.length,
               segments: result.route.segments.length,
               distance: result.route.totalDistance,
+              strategy: STRATEGY_NAMES[chargingStrategy as keyof typeof STRATEGY_NAMES] || 'Unknown',
             });
             if (result.route.chargingStops.length > 0) {
               console.warn('🔋 Charging stops:', result.route.chargingStops);
@@ -182,19 +205,27 @@ export default function TripRouteScreen({ navigation, route }: Props) {
 
         {/* Charging station markers */}
         {detailedRoute.chargingStops.map((stop, index) => {
-          console.warn(`⚡ Rendering charging marker ${index + 1}:`, {
+          const stopNumber = index + 1;
+          console.warn(`⚡ Rendering charging marker ${stopNumber}:`, {
             name: stop.station.name,
             lat: stop.station.latitude,
             lon: stop.station.longitude,
+            arrivalBattery: stop.arrivalBattery,
+            departureBattery: stop.departureBattery,
+            reason: stop.reasonForStop,
           });
           return (
             <Marker
               key={`charging-${index}`}
               coordinate={{ latitude: stop.station.latitude, longitude: stop.station.longitude }}
-              title={stop.station.name}
-              description={`Stop ${index + 1} • ${stop.chargingDuration} min charge`}
-              pinColor={ACCENT_GREEN}
-            />
+              title={`⚡ Stop ${stopNumber}: ${stop.station.name}`}
+              description={`${stop.arrivalBattery.toFixed(0)}% → ${stop.departureBattery.toFixed(0)}% • ${stop.chargingDuration} min • ${stop.reasonForStop}`}
+            >
+              <View style={styles.chargingMarker}>
+                <Ionicons name="flash" size={16} color="#050816" />
+                <Text style={styles.chargingMarkerNumber}>{stopNumber}</Text>
+              </View>
+            </Marker>
           );
         })}
 
@@ -272,6 +303,19 @@ export default function TripRouteScreen({ navigation, route }: Props) {
                 </View>
               </View>
 
+              {/* Charging Strategy Badge */}
+              {detailedRoute.chargingStops.length > 0 && (
+                <View style={styles.strategyBadge}>
+                  <MaterialCommunityIcons name="strategy" size={16} color={ACCENT_GREEN} />
+                  <Text style={styles.strategyText}>
+                    Strategy: {STRATEGY_NAMES[chargingStrategy as keyof typeof STRATEGY_NAMES]}
+                  </Text>
+                  <Text style={styles.strategySubtext}>
+                    Optimized for {chargingStrategy === 0 ? 'fewer stops' : chargingStrategy === 1 ? 'balance' : 'faster charging'}
+                  </Text>
+                </View>
+              )}
+
               {/* Route Details */}
               <Text style={styles.sectionTitle}>Route details</Text>
               {detailedRoute.segments.map(segment => (
@@ -305,12 +349,17 @@ export default function TripRouteScreen({ navigation, route }: Props) {
                       <Text style={styles.costValue}>
                         ₱{detailedRoute.costBreakdown.chargingCost.toFixed(2)}
                       </Text>
-                      <Text style={styles.statLabel}>Total Time</Text>
                     </View>
                     <View style={styles.costRow}>
-                      <Text style={styles.costLabel}>Booking fee (2%)</Text>
+                      <Text style={styles.costLabel}>Booking fee (flat)</Text>
                       <Text style={styles.costValue}>
                         ₱{detailedRoute.costBreakdown.bookingFee.toFixed(2)}
+                      </Text>
+                    </View>
+                    <View style={styles.costRow}>
+                      <Text style={styles.costLabel}>Commission (2%)</Text>
+                      <Text style={styles.costValue}>
+                        ₱{(detailedRoute.costBreakdown as any).commissionFee?.toFixed(2) || '0.00'}
                       </Text>
                     </View>
                     <View style={styles.dividerThin} />
@@ -804,6 +853,58 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#9CA3AF',
     textAlign: 'center',
+  },
+  strategyBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,244,112,0.08)',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0,244,112,0.3)',
+    gap: 8,
+  },
+  strategyText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: ACCENT_GREEN,
+    flex: 1,
+  },
+  strategySubtext: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    marginTop: 2,
+  },
+  chargingMarker: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: ACCENT_GREEN,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#050816',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  chargingMarkerNumber: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#050816',
+    backgroundColor: ACCENT_GREEN,
+    borderRadius: 8,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderWidth: 1,
+    borderColor: '#050816',
   },
   bottomPadding: {
     height: 28,
