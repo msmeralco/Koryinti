@@ -1,0 +1,803 @@
+[
+  {
+    "DataProvider": {
+      "WebsiteURL": "http://openchargemap.org",
+      "Comments": null,
+      "DataProviderStatusType": {
+        "IsProviderEnabled": true,
+        "ID": 1,
+        "Title": "Manual Data Entry"
+      },
+      "IsRestrictedEdit": false,
+      "IsOpenDataLicensed": true,
+      "IsApprovedImport": true,
+      "License": "Licensed under Creative Commons Attribution 4.0 International (CC BY 4.0)",
+      "DateLastImported": null,
+      "ID": 1,
+      "Title": "Open Charge Map Contributors"
+    },
+    "OperatorInfo": {
+      "WebsiteURL": "https://www.acmobility.ph/",
+      "Comments": null,
+      "PhonePrimaryContact": "\u002B63 2 8403 3433",
+      "PhoneSecondaryContact": null,
+      "IsPrivateIndividual": false,
+      "AddressInfo": null,
+      "BookingURL": null,
+      "ContactEmail": "info@acmobility.ph",
+      "FaultReportEmail": null,
+      "IsRestrictedEdit": false,
+      "ID": 3900,
+      "Title": "AC Mobility (PH)"
+    },
+    "UsageType": {
+      "IsPayAtLocation": false,
+      "IsMembershipRequired": true,
+      "IsAccessKeyRequired": true,
+      "ID": 4,
+      "Title": "Public - Membership Required"
+    },
+    "StatusType": {
+      "IsOperational": true,
+      "IsUserSelectable": true,
+      "ID": 50,
+      "Title": "Operational"
+    },
+    "SubmissionStatus": {
+      "IsLive": true,
+      "ID": 200,
+      "Title": "Submission Published"
+    },
+    "UserComments": null,
+    "PercentageSimilarity": null,
+    "MediaItems": null,
+    "IsRecentlyVerified": true,
+    "DateLastVerified": "2025-11-07T03:48:00Z",
+    "ID": 463385,
+    "UUID": "7A10FBFC-5A1B-485D-8064-8FE5DA7FFC0E",
+    "ParentChargePointID": null,
+    "DataProviderID": 1,
+    "DataProvidersReference": null,
+    "OperatorID": 3900,
+    "OperatorsReference": null,
+    "UsageTypeID": 4,
+    "UsageCost": "\u20B135 per kWh",
+    "AddressInfo": {
+      "ID": 463774,
+      "Title": "BYD Chinatown",
+      "AddressLine1": "Luna St.",
+      "AddressLine2": "Binondo",
+      "Town": "Manila",
+      "StateOrProvince": "Metro Manila",
+      "Postcode": null,
+      "CountryID": 177,
+      "Country": {
+        "ISOCode": "PH",
+        "ContinentCode": "AS",
+        "ID": 177,
+        "Title": "Philippines"
+      },
+      "Latitude": 14.600976826929696,
+      "Longitude": 120.9734304096039,
+      "ContactTelephone1": null,
+      "ContactTelephone2": null,
+      "ContactEmail": null,
+      "AccessComments": null,
+      "RelatedURL": null,
+      "Distance": 1.1704308034860706,
+      "DistanceUnit": 1
+    },
+    "Connections": [
+      {
+        "ID": 779785,
+        "ConnectionTypeID": 33,
+        "ConnectionType": {
+          "FormalName": "IEC 62196-3 Configuration FF",
+          "IsDiscontinued": false,
+          "IsObsolete": false,
+          "ID": 33,
+          "Title": "CCS (Type 2)"
+        },
+        "Reference": null,
+        "StatusTypeID": 50,
+        "StatusType": {
+          "IsOperational": true,
+          "IsUserSelectable": true,
+          "ID": 50,
+          "Title": "Operational"
+        },
+        "LevelID": 3,
+        "Level": {
+          "Comments": "40KW and Higher",
+          "IsFastChargeCapable": true,
+          "ID": 3,
+          "Title": "Level 3:  High (Over 40kW)"
+        },
+        "Amps": null,
+        "Voltage": null,
+        "PowerKW": 60,
+        "CurrentTypeID": 30,
+        "CurrentType": {
+          "Description": "Direct Current",
+          "ID": 30,
+          "Title": "DC"
+        },
+        "Quantity": 2,
+        "Comments": null
+      }
+    ],
+    "NumberOfPoints": 2,
+    "GeneralComments": null,
+    "DatePlanned": null,
+    "DateLastConfirmed": null,
+    "StatusTypeID": 50,
+    "DateLastStatusUpdate": "2025-11-07T03:48:00Z",
+    "MetadataValues": null,
+    "DataQualityLevel": 1,
+    "DateCreated": "2025-11-07T03:48:00Z",
+    "SubmissionStatusTypeID": 200
+  },
+  {
+    "DataProvider": {
+      "WebsiteURL": "http://openchargemap.org",
+      "Comments": null,
+      "DataProviderStatusType": {
+        "IsProviderEnabled": true,
+        "ID": 1,
+        "Title": "Manual Data Entry"
+      },
+      "IsRestrictedEdit": false,
+      "IsOpenDataLicensed": true,
+      "IsApprovedImport": true,
+      "License": "Licensed under Creative Commons Attribution 4.0 International (CC BY 4.0)",
+      "DateLastImported": null,
+      "ID": 1,
+      "Title": "Open Charge Map Contributors"
+    },
+    "OperatorInfo": {
+      "WebsiteURL": "https://wechargehyperfast.com",
+      "Comments": null,
+      "PhonePrimaryContact": "\u002B639210627969",
+      "PhoneSecondaryContact": null,
+      "IsPrivateIndividual": false,
+      "AddressInfo": null,
+      "BookingURL": null,
+      "ContactEmail": "support@wechargehyperfast.com",
+      "FaultReportEmail": null,
+      "IsRestrictedEdit": false,
+      "ID": 3907,
+      "Title": "WeCharge Hyperfast (PH)"
+    },
+    "UsageType": {
+      "IsPayAtLocation": false,
+      "IsMembershipRequired": true,
+      "IsAccessKeyRequired": true,
+      "ID": 4,
+      "Title": "Public - Membership Required"
+    },
+    "StatusType": {
+      "IsOperational": true,
+      "IsUserSelectable": true,
+      "ID": 50,
+      "Title": "Operational"
+    },
+    "SubmissionStatus": {
+      "IsLive": true,
+      "ID": 200,
+      "Title": "Submission Published"
+    },
+    "UserComments": null,
+    "PercentageSimilarity": null,
+    "MediaItems": null,
+    "IsRecentlyVerified": true,
+    "DateLastVerified": "2025-11-07T03:45:00Z",
+    "ID": 463384,
+    "UUID": "A0415297-28F9-4A5F-9F2C-01E0A79CCBFC",
+    "ParentChargePointID": null,
+    "DataProviderID": 1,
+    "DataProvidersReference": null,
+    "OperatorID": 3907,
+    "OperatorsReference": null,
+    "UsageTypeID": 4,
+    "UsageCost": null,
+    "AddressInfo": {
+      "ID": 463773,
+      "Title": "WeCharge Hyperfast Charger - Platinum-Gilmore",
+      "AddressLine1": "1st St.",
+      "AddressLine2": null,
+      "Town": "Quezon City",
+      "StateOrProvince": "Metro Manila",
+      "Postcode": null,
+      "CountryID": 177,
+      "Country": {
+        "ISOCode": "PH",
+        "ContinentCode": "AS",
+        "ID": 177,
+        "Title": "Philippines"
+      },
+      "Latitude": 14.6128324466506,
+      "Longitude": 121.03453070161504,
+      "ContactTelephone1": "\u002B63 921 062 7969",
+      "ContactTelephone2": null,
+      "ContactEmail": null,
+      "AccessComments": null,
+      "RelatedURL": null,
+      "Distance": 5.614897911285748,
+      "DistanceUnit": 1
+    },
+    "Connections": [
+      {
+        "ID": 779783,
+        "ConnectionTypeID": 33,
+        "ConnectionType": {
+          "FormalName": "IEC 62196-3 Configuration FF",
+          "IsDiscontinued": false,
+          "IsObsolete": false,
+          "ID": 33,
+          "Title": "CCS (Type 2)"
+        },
+        "Reference": null,
+        "StatusTypeID": 50,
+        "StatusType": {
+          "IsOperational": true,
+          "IsUserSelectable": true,
+          "ID": 50,
+          "Title": "Operational"
+        },
+        "LevelID": 3,
+        "Level": {
+          "Comments": "40KW and Higher",
+          "IsFastChargeCapable": true,
+          "ID": 3,
+          "Title": "Level 3:  High (Over 40kW)"
+        },
+        "Amps": null,
+        "Voltage": null,
+        "PowerKW": 240,
+        "CurrentTypeID": 30,
+        "CurrentType": {
+          "Description": "Direct Current",
+          "ID": 30,
+          "Title": "DC"
+        },
+        "Quantity": 1,
+        "Comments": null
+      },
+      {
+        "ID": 779784,
+        "ConnectionTypeID": 1040,
+        "ConnectionType": {
+          "FormalName": "GB-T DC - GB/T 20234.3",
+          "IsDiscontinued": false,
+          "IsObsolete": false,
+          "ID": 1040,
+          "Title": "GB-T DC - GB/T 20234.3"
+        },
+        "Reference": null,
+        "StatusTypeID": 50,
+        "StatusType": {
+          "IsOperational": true,
+          "IsUserSelectable": true,
+          "ID": 50,
+          "Title": "Operational"
+        },
+        "LevelID": 3,
+        "Level": {
+          "Comments": "40KW and Higher",
+          "IsFastChargeCapable": true,
+          "ID": 3,
+          "Title": "Level 3:  High (Over 40kW)"
+        },
+        "Amps": null,
+        "Voltage": null,
+        "PowerKW": 240,
+        "CurrentTypeID": 30,
+        "CurrentType": {
+          "Description": "Direct Current",
+          "ID": 30,
+          "Title": "DC"
+        },
+        "Quantity": 1,
+        "Comments": null
+      }
+    ],
+    "NumberOfPoints": 2,
+    "GeneralComments": null,
+    "DatePlanned": null,
+    "DateLastConfirmed": null,
+    "StatusTypeID": 50,
+    "DateLastStatusUpdate": "2025-11-07T03:45:00Z",
+    "MetadataValues": null,
+    "DataQualityLevel": 1,
+    "DateCreated": "2025-11-07T03:45:00Z",
+    "SubmissionStatusTypeID": 200
+  },
+  {
+    "DataProvider": {
+      "WebsiteURL": "http://openchargemap.org",
+      "Comments": null,
+      "DataProviderStatusType": {
+        "IsProviderEnabled": true,
+        "ID": 1,
+        "Title": "Manual Data Entry"
+      },
+      "IsRestrictedEdit": false,
+      "IsOpenDataLicensed": true,
+      "IsApprovedImport": true,
+      "License": "Licensed under Creative Commons Attribution 4.0 International (CC BY 4.0)",
+      "DateLastImported": null,
+      "ID": 1,
+      "Title": "Open Charge Map Contributors"
+    },
+    "OperatorInfo": {
+      "WebsiteURL": null,
+      "Comments": null,
+      "PhonePrimaryContact": null,
+      "PhoneSecondaryContact": null,
+      "IsPrivateIndividual": null,
+      "AddressInfo": null,
+      "BookingURL": null,
+      "ContactEmail": null,
+      "FaultReportEmail": null,
+      "IsRestrictedEdit": null,
+      "ID": 1,
+      "Title": "(Unknown Operator)"
+    },
+    "UsageType": {
+      "IsPayAtLocation": false,
+      "IsMembershipRequired": true,
+      "IsAccessKeyRequired": true,
+      "ID": 4,
+      "Title": "Public - Membership Required"
+    },
+    "StatusType": {
+      "IsOperational": true,
+      "IsUserSelectable": true,
+      "ID": 50,
+      "Title": "Operational"
+    },
+    "SubmissionStatus": {
+      "IsLive": true,
+      "ID": 200,
+      "Title": "Submission Published"
+    },
+    "UserComments": null,
+    "PercentageSimilarity": null,
+    "MediaItems": null,
+    "IsRecentlyVerified": true,
+    "DateLastVerified": "2025-11-09T06:17:00Z",
+    "ID": 464396,
+    "UUID": "612480DE-086C-49C9-AA10-3604FF7728B0",
+    "ParentChargePointID": null,
+    "DataProviderID": 1,
+    "DataProvidersReference": null,
+    "OperatorID": 1,
+    "OperatorsReference": null,
+    "UsageTypeID": 4,
+    "UsageCost": "\u20B128 per kWh",
+    "AddressInfo": {
+      "ID": 464785,
+      "Title": "Robinsons Magnolia",
+      "AddressLine1": "Aurora Blvd.",
+      "AddressLine2": null,
+      "Town": "Quezon City",
+      "StateOrProvince": "Metro Manila",
+      "Postcode": "1111",
+      "CountryID": 177,
+      "Country": {
+        "ISOCode": "PH",
+        "ContinentCode": "AS",
+        "ID": 177,
+        "Title": "Philippines"
+      },
+      "Latitude": 14.61456927987146,
+      "Longitude": 121.03766516868245,
+      "ContactTelephone1": null,
+      "ContactTelephone2": null,
+      "ContactEmail": null,
+      "AccessComments": null,
+      "RelatedURL": null,
+      "Distance": 5.991960741038049,
+      "DistanceUnit": 1
+    },
+    "Connections": [
+      {
+        "ID": 781932,
+        "ConnectionTypeID": 1036,
+        "ConnectionType": {
+          "FormalName": "IEC 62196-2",
+          "IsDiscontinued": false,
+          "IsObsolete": false,
+          "ID": 1036,
+          "Title": "Type 2 (Tethered Connector) "
+        },
+        "Reference": null,
+        "StatusTypeID": 50,
+        "StatusType": {
+          "IsOperational": true,
+          "IsUserSelectable": true,
+          "ID": 50,
+          "Title": "Operational"
+        },
+        "LevelID": 2,
+        "Level": {
+          "Comments": "Over 2 kW, usually non-domestic socket type",
+          "IsFastChargeCapable": false,
+          "ID": 2,
+          "Title": "Level 2 : Medium (Over 2kW)"
+        },
+        "Amps": null,
+        "Voltage": null,
+        "PowerKW": 22,
+        "CurrentTypeID": 20,
+        "CurrentType": {
+          "Description": "Alternating Current - Three Phase",
+          "ID": 20,
+          "Title": "AC (Three-Phase)"
+        },
+        "Quantity": 2,
+        "Comments": null
+      }
+    ],
+    "NumberOfPoints": 2,
+    "GeneralComments": null,
+    "DatePlanned": null,
+    "DateLastConfirmed": null,
+    "StatusTypeID": 50,
+    "DateLastStatusUpdate": "2025-11-09T06:17:00Z",
+    "MetadataValues": null,
+    "DataQualityLevel": 1,
+    "DateCreated": "2025-11-09T06:17:00Z",
+    "SubmissionStatusTypeID": 200
+  },
+  {
+    "DataProvider": {
+      "WebsiteURL": "http://openchargemap.org",
+      "Comments": null,
+      "DataProviderStatusType": {
+        "IsProviderEnabled": true,
+        "ID": 1,
+        "Title": "Manual Data Entry"
+      },
+      "IsRestrictedEdit": false,
+      "IsOpenDataLicensed": true,
+      "IsApprovedImport": true,
+      "License": "Licensed under Creative Commons Attribution 4.0 International (CC BY 4.0)",
+      "DateLastImported": null,
+      "ID": 1,
+      "Title": "Open Charge Map Contributors"
+    },
+    "OperatorInfo": {
+      "WebsiteURL": "https://www.acmobility.ph/",
+      "Comments": null,
+      "PhonePrimaryContact": "\u002B63 2 8403 3433",
+      "PhoneSecondaryContact": null,
+      "IsPrivateIndividual": false,
+      "AddressInfo": null,
+      "BookingURL": null,
+      "ContactEmail": "info@acmobility.ph",
+      "FaultReportEmail": null,
+      "IsRestrictedEdit": false,
+      "ID": 3900,
+      "Title": "AC Mobility (PH)"
+    },
+    "UsageType": {
+      "IsPayAtLocation": false,
+      "IsMembershipRequired": true,
+      "IsAccessKeyRequired": true,
+      "ID": 4,
+      "Title": "Public - Membership Required"
+    },
+    "StatusType": {
+      "IsOperational": true,
+      "IsUserSelectable": true,
+      "ID": 50,
+      "Title": "Operational"
+    },
+    "SubmissionStatus": {
+      "IsLive": true,
+      "ID": 200,
+      "Title": "Submission Published"
+    },
+    "UserComments": null,
+    "PercentageSimilarity": null,
+    "MediaItems": null,
+    "IsRecentlyVerified": true,
+    "DateLastVerified": "2025-11-06T05:06:00Z",
+    "ID": 463101,
+    "UUID": "A50C5F49-A8FE-4731-990C-67EAEE3D195A",
+    "ParentChargePointID": null,
+    "DataProviderID": 1,
+    "DataProvidersReference": null,
+    "OperatorID": 3900,
+    "OperatorsReference": null,
+    "UsageTypeID": 4,
+    "UsageCost": "\u20B135 per kWh",
+    "AddressInfo": {
+      "ID": 463490,
+      "Title": "Legazpi Carpark",
+      "AddressLine1": "Legazpi Street",
+      "AddressLine2": null,
+      "Town": "Makati City",
+      "StateOrProvince": "Metro Manila",
+      "Postcode": null,
+      "CountryID": 177,
+      "Country": {
+        "ISOCode": "PH",
+        "ContinentCode": "AS",
+        "ID": 177,
+        "Title": "Philippines"
+      },
+      "Latitude": 14.555264668126242,
+      "Longitude": 121.01643680148186,
+      "ContactTelephone1": null,
+      "ContactTelephone2": null,
+      "ContactEmail": null,
+      "AccessComments": null,
+      "RelatedURL": null,
+      "Distance": 6.0190723588917985,
+      "DistanceUnit": 1
+    },
+    "Connections": [
+      {
+        "ID": 779210,
+        "ConnectionTypeID": 33,
+        "ConnectionType": {
+          "FormalName": "IEC 62196-3 Configuration FF",
+          "IsDiscontinued": false,
+          "IsObsolete": false,
+          "ID": 33,
+          "Title": "CCS (Type 2)"
+        },
+        "Reference": null,
+        "StatusTypeID": 50,
+        "StatusType": {
+          "IsOperational": true,
+          "IsUserSelectable": true,
+          "ID": 50,
+          "Title": "Operational"
+        },
+        "LevelID": 3,
+        "Level": {
+          "Comments": "40KW and Higher",
+          "IsFastChargeCapable": true,
+          "ID": 3,
+          "Title": "Level 3:  High (Over 40kW)"
+        },
+        "Amps": null,
+        "Voltage": null,
+        "PowerKW": 480,
+        "CurrentTypeID": 30,
+        "CurrentType": {
+          "Description": "Direct Current",
+          "ID": 30,
+          "Title": "DC"
+        },
+        "Quantity": 2,
+        "Comments": null
+      },
+      {
+        "ID": 779211,
+        "ConnectionTypeID": 33,
+        "ConnectionType": {
+          "FormalName": "IEC 62196-3 Configuration FF",
+          "IsDiscontinued": false,
+          "IsObsolete": false,
+          "ID": 33,
+          "Title": "CCS (Type 2)"
+        },
+        "Reference": null,
+        "StatusTypeID": 50,
+        "StatusType": {
+          "IsOperational": true,
+          "IsUserSelectable": true,
+          "ID": 50,
+          "Title": "Operational"
+        },
+        "LevelID": 3,
+        "Level": {
+          "Comments": "40KW and Higher",
+          "IsFastChargeCapable": true,
+          "ID": 3,
+          "Title": "Level 3:  High (Over 40kW)"
+        },
+        "Amps": null,
+        "Voltage": null,
+        "PowerKW": 240,
+        "CurrentTypeID": 30,
+        "CurrentType": {
+          "Description": "Direct Current",
+          "ID": 30,
+          "Title": "DC"
+        },
+        "Quantity": 8,
+        "Comments": null
+      }
+    ],
+    "NumberOfPoints": 10,
+    "GeneralComments": null,
+    "DatePlanned": null,
+    "DateLastConfirmed": null,
+    "StatusTypeID": 50,
+    "DateLastStatusUpdate": "2025-11-06T05:06:00Z",
+    "MetadataValues": null,
+    "DataQualityLevel": 1,
+    "DateCreated": "2025-11-04T12:56:00Z",
+    "SubmissionStatusTypeID": 200
+  },
+  {
+    "DataProvider": {
+      "WebsiteURL": "http://openchargemap.org",
+      "Comments": null,
+      "DataProviderStatusType": {
+        "IsProviderEnabled": true,
+        "ID": 1,
+        "Title": "Manual Data Entry"
+      },
+      "IsRestrictedEdit": false,
+      "IsOpenDataLicensed": true,
+      "IsApprovedImport": true,
+      "License": "Licensed under Creative Commons Attribution 4.0 International (CC BY 4.0)",
+      "DateLastImported": null,
+      "ID": 1,
+      "Title": "Open Charge Map Contributors"
+    },
+    "OperatorInfo": {
+      "WebsiteURL": "https://www.acmobility.ph/",
+      "Comments": null,
+      "PhonePrimaryContact": "\u002B63 2 8403 3433",
+      "PhoneSecondaryContact": null,
+      "IsPrivateIndividual": false,
+      "AddressInfo": null,
+      "BookingURL": null,
+      "ContactEmail": "info@acmobility.ph",
+      "FaultReportEmail": null,
+      "IsRestrictedEdit": false,
+      "ID": 3900,
+      "Title": "AC Mobility (PH)"
+    },
+    "UsageType": {
+      "IsPayAtLocation": false,
+      "IsMembershipRequired": true,
+      "IsAccessKeyRequired": true,
+      "ID": 4,
+      "Title": "Public - Membership Required"
+    },
+    "StatusType": {
+      "IsOperational": true,
+      "IsUserSelectable": true,
+      "ID": 50,
+      "Title": "Operational"
+    },
+    "SubmissionStatus": {
+      "IsLive": true,
+      "ID": 200,
+      "Title": "Submission Published"
+    },
+    "UserComments": null,
+    "PercentageSimilarity": null,
+    "MediaItems": null,
+    "IsRecentlyVerified": true,
+    "DateLastVerified": "2025-11-06T05:06:00Z",
+    "ID": 463095,
+    "UUID": "D855202C-BA1D-4FFB-9D6B-D367165D7A07",
+    "ParentChargePointID": null,
+    "DataProviderID": 1,
+    "DataProvidersReference": null,
+    "OperatorID": 3900,
+    "OperatorsReference": null,
+    "UsageTypeID": 4,
+    "UsageCost": "\u20B135 per kWh",
+    "AddressInfo": {
+      "ID": 463484,
+      "Title": "Corinthian Carpark",
+      "AddressLine1": "Gamboa St.",
+      "AddressLine2": null,
+      "Town": "Makati City",
+      "StateOrProvince": "Metro Manila",
+      "Postcode": null,
+      "CountryID": 177,
+      "Country": {
+        "ISOCode": "PH",
+        "ContinentCode": "AS",
+        "ID": 177,
+        "Title": "Philippines"
+      },
+      "Latitude": 14.553344448977,
+      "Longitude": 121.01866665661464,
+      "ContactTelephone1": null,
+      "ContactTelephone2": null,
+      "ContactEmail": null,
+      "AccessComments": null,
+      "RelatedURL": null,
+      "Distance": 6.332297158582639,
+      "DistanceUnit": 1
+    },
+    "Connections": [
+      {
+        "ID": 779195,
+        "ConnectionTypeID": 33,
+        "ConnectionType": {
+          "FormalName": "IEC 62196-3 Configuration FF",
+          "IsDiscontinued": false,
+          "IsObsolete": false,
+          "ID": 33,
+          "Title": "CCS (Type 2)"
+        },
+        "Reference": null,
+        "StatusTypeID": 50,
+        "StatusType": {
+          "IsOperational": true,
+          "IsUserSelectable": true,
+          "ID": 50,
+          "Title": "Operational"
+        },
+        "LevelID": 3,
+        "Level": {
+          "Comments": "40KW and Higher",
+          "IsFastChargeCapable": true,
+          "ID": 3,
+          "Title": "Level 3:  High (Over 40kW)"
+        },
+        "Amps": null,
+        "Voltage": null,
+        "PowerKW": 480,
+        "CurrentTypeID": 30,
+        "CurrentType": {
+          "Description": "Direct Current",
+          "ID": 30,
+          "Title": "DC"
+        },
+        "Quantity": 1,
+        "Comments": null
+      },
+      {
+        "ID": 779196,
+        "ConnectionTypeID": 33,
+        "ConnectionType": {
+          "FormalName": "IEC 62196-3 Configuration FF",
+          "IsDiscontinued": false,
+          "IsObsolete": false,
+          "ID": 33,
+          "Title": "CCS (Type 2)"
+        },
+        "Reference": null,
+        "StatusTypeID": 50,
+        "StatusType": {
+          "IsOperational": true,
+          "IsUserSelectable": true,
+          "ID": 50,
+          "Title": "Operational"
+        },
+        "LevelID": 3,
+        "Level": {
+          "Comments": "40KW and Higher",
+          "IsFastChargeCapable": true,
+          "ID": 3,
+          "Title": "Level 3:  High (Over 40kW)"
+        },
+        "Amps": null,
+        "Voltage": null,
+        "PowerKW": 240,
+        "CurrentTypeID": 30,
+        "CurrentType": {
+          "Description": "Direct Current",
+          "ID": 30,
+          "Title": "DC"
+        },
+        "Quantity": 8,
+        "Comments": null
+      }
+    ],
+    "NumberOfPoints": 9,
+    "GeneralComments": null,
+    "DatePlanned": null,
+    "DateLastConfirmed": null,
+    "StatusTypeID": 50,
+    "DateLastStatusUpdate": "2025-11-06T05:06:00Z",
+    "MetadataValues": null,
+    "DataQualityLevel": 1,
+    "DateCreated": "2025-11-04T12:42:00Z",
+    "SubmissionStatusTypeID": 200
+  }
+]

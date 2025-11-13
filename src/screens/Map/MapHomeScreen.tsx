@@ -71,8 +71,10 @@ export default function MapHomeScreen({ navigation }: Props) {
         const url = `https://api.openchargemap.io/v3/poi?key=${OPENCHARGEMAP_API_KEY}&boundingbox=${minLat},${minLng},${maxLat},${maxLng}&maxresults=500`;
 
         const resp = await fetch(url);
+        console.warn('📡 Response status:', resp.status);
         if (!resp.ok) throw new Error(`OpenChargeMap request failed: ${resp.status}`);
         const data = await resp.json();
+        console.warn('📦 Data received:', data?.length || 0, 'POIs');
 
         // Data already contains details for each POI. Map to our Marker shape.
         setRawPOIs(data);
@@ -92,6 +94,10 @@ export default function MapHomeScreen({ navigation }: Props) {
           })
           .filter(Boolean) as ChargingMarker[];
 
+        console.warn('✅ Mapped markers:', mapped.length);
+        if (mapped.length > 0) {
+          console.warn('📍 First marker:', JSON.stringify(mapped[0], null, 2));
+        }
         setMarkers(mapped);
       } catch (err: unknown) {
         console.error('Failed to load OpenChargeMap POIs', err);
@@ -278,15 +284,21 @@ export default function MapHomeScreen({ navigation }: Props) {
               <View style={styles.userMarkerCore} />
             </View>
           </Marker>
-          {markers.map(m => (
-            <Marker
-              key={`ocm-${m.id}`}
-              coordinate={{ latitude: m.latitude, longitude: m.longitude }}
-              title={m.title}
-              description={m.address}
-              pinColor="wheat"
-            />
-          ))}
+          {(() => {
+            console.warn('🗺️ Rendering markers, count:', markers.length);
+            return markers.map(m => {
+              console.warn('📌 Marker:', m.id, m.title, `(${m.latitude}, ${m.longitude})`);
+              return (
+                <Marker
+                  key={`ocm-${m.id}`}
+                  coordinate={{ latitude: m.latitude, longitude: m.longitude }}
+                  title={m.title}
+                  description={m.address}
+                  pinColor="wheat"
+                />
+              );
+            });
+          })()}
         </MapView>
       </View>
 
