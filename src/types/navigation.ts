@@ -28,6 +28,8 @@ export type MapStackParamList = {
     to: string;
     currentBatteryPercent?: number;
     minimumArrivalBattery?: number;
+    chargingStrategy?: number; // 0 = Few long, 1 = Balanced, 2 = Many short
+    departureTime?: string; // ISO string for custom departure time
   };
   ReservationDetails: { routeId: string; stations: EnrichedStation[] };
   ScanQR: { reservationId: string };

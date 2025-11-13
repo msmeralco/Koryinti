@@ -21,6 +21,10 @@ import {
   CONSUMPTION_MULTIPLIERS,
 } from './standardVehicleModel';
 import {
+  optimizeRoute,
+  StrategyType,
+} from './chargingOptimizer';
+import {
   DetailedRoute,
   RouteSegment,
   ChargingStop,
@@ -45,6 +49,8 @@ export async function calculateDetailedRoute(
       preferFastChargers = true,
       maxDetourKm = 5,
       minimumArrivalBattery = MINIMUM_BATTERY_BUFFER,
+      chargingStrategy = 1, // Default to balanced
+      trafficMultiplier = 1.0, // Default no traffic impact
     } = options;
 
     // Step 1: Geocode addresses to coordinates
@@ -108,7 +114,7 @@ export async function calculateDetailedRoute(
       chargingStations = convertStationsToAppFormat(filtered);
     }
 
-    // Step 5: Plan optimal charging stops
+    // Step 5: Plan optimal charging stops using ABRP optimizer
     const { segments, chargingStops } = planRouteSegments(
       from,
       to,
@@ -117,7 +123,9 @@ export async function calculateDetailedRoute(
       routeData,
       currentBatteryPercent,
       chargingStations,
-      minimumArrivalBattery
+      minimumArrivalBattery,
+      chargingStrategy as StrategyType,
+      trafficMultiplier
     );
 
     // Step 6: Calculate costs
@@ -170,7 +178,7 @@ export async function calculateDetailedRoute(
 }
 
 /**
- * Plan route segments with battery tracking and charging stops
+ * Plan route segments with battery tracking and charging stops using ABRP optimizer
  */
 function planRouteSegments(
   from: string,
@@ -180,17 +188,15 @@ function planRouteSegments(
   routeData: RouteResult,
   initialBattery: number,
   availableStations: Station[],
-  minimumArrivalBattery: number
+  minimumArrivalBattery: number,
+  chargingStrategy: StrategyType,
+  trafficMultiplier: number
 ): { segments: RouteSegment[]; chargingStops: ChargingStop[] } {
   const segments: RouteSegment[] = [];
   const chargingStops: ChargingStop[] = [];
   const vehicle = getStandardVehicle();
 
-  const currentBattery = initialBattery;
-  let cumulativeDistance = 0;
-  let cumulativeDuration = 0;
-
-  // Segment 1: Starting point
+  // Step 1: Starting point segment
   segments.push({
     id: `segment-0`,
     order: 0,
@@ -201,24 +207,39 @@ function planRouteSegments(
     durationFromPrevious: 0,
     cumulativeDistance: 0,
     cumulativeDuration: 0,
-    batteryAtArrival: currentBattery,
-    batteryAtDeparture: currentBattery,
+    batteryAtArrival: initialBattery,
+    batteryAtDeparture: initialBattery,
   });
 
-  // Check if we need charging stops
-  const batteryNeeded = calculateBatteryConsumption(
+  // Step 2: Use ABRP optimizer to find optimal charging stops
+  const optimizedRoute = optimizeRoute(
     routeData.distance,
-    CONSUMPTION_MULTIPLIERS.demo // Use aggressive demo consumption
+    initialBattery,
+    availableStations,
+    minimumArrivalBattery,
+    chargingStrategy,
+    trafficMultiplier
   );
-  const batteryAtDestination = currentBattery - batteryNeeded;
 
-  if (batteryAtDestination >= minimumArrivalBattery) {
+  let cumulativeDistance = 0;
+  let cumulativeDuration = 0;
+  let segmentOrder = 1;
+  let currentBattery = initialBattery;
+
+  // Step 3: Build segments from optimized stops
+  if (optimizedRoute.stops.length === 0) {
     // No charging needed - direct route
+    const batteryConsumed = calculateBatteryConsumption(
+      routeData.distance,
+      CONSUMPTION_MULTIPLIERS.demo * trafficMultiplier
+    );
+    const finalBattery = initialBattery - batteryConsumed;
+
     const travelInstructions = extractTravelInstructions(routeData);
 
     segments.push({
-      id: `segment-1`,
-      order: 1,
+      id: `segment-${segmentOrder}`,
+      order: segmentOrder,
       type: 'travel',
       location: `Traveling to ${to}`,
       coordinates: toCoords,
@@ -226,206 +247,150 @@ function planRouteSegments(
       durationFromPrevious: routeData.duration,
       cumulativeDistance: routeData.distance,
       cumulativeDuration: routeData.duration,
-      batteryAtArrival: Math.max(batteryAtDestination, 0),
+      batteryAtArrival: Math.max(finalBattery, 0),
       instructions: travelInstructions,
     });
 
-    segments.push({
-      id: `segment-2`,
-      order: 2,
-      type: 'destination',
-      location: to,
-      coordinates: toCoords,
-      distanceFromPrevious: 0,
-      durationFromPrevious: 0,
-      cumulativeDistance: routeData.distance,
-      cumulativeDuration: routeData.duration,
-      batteryAtArrival: Math.max(batteryAtDestination, 0),
-    });
+    segmentOrder++;
+    cumulativeDistance = routeData.distance;
+    cumulativeDuration = routeData.duration;
   } else {
-    // Need charging - find optimal stop(s)
-    const optimalStation = findOptimalChargingStation(
-      availableStations,
-      fromCoords,
-      toCoords,
-      routeData.distance,
-      currentBattery
-    );
+    // Process each optimized charging stop
+    for (let i = 0; i < optimizedRoute.stops.length; i++) {
+      const stop = optimizedRoute.stops[i];
 
-    if (optimalStation) {
-      // Calculate distance to charging station (approximate as midpoint for now)
-      const distanceToStation = routeData.distance * 0.4; // Roughly 40% of the way
-      const durationToStation = routeData.duration * 0.4;
-      const batteryAtStation =
-        currentBattery -
-        calculateBatteryConsumption(distanceToStation, CONSUMPTION_MULTIPLIERS.demo);
+      // Calculate distance and duration to this stop
+      const distanceToStop =
+        i === 0
+          ? stop.distanceFromStart
+          : stop.distanceFromStart - optimizedRoute.stops[i - 1].distanceFromStart;
 
-      cumulativeDistance += distanceToStation;
-      cumulativeDuration += durationToStation;
+      const durationToStop = (distanceToStop / routeData.distance) * routeData.duration;
+
+      cumulativeDistance += distanceToStop;
+      cumulativeDuration += durationToStop;
 
       // Travel segment to charging station
+      const stationCoords = {
+        latitude: stop.station.latitude,
+        longitude: stop.station.longitude,
+      };
+
       segments.push({
-        id: `segment-1`,
-        order: 1,
+        id: `segment-${segmentOrder}`,
+        order: segmentOrder,
         type: 'travel',
-        location: `Traveling to ${optimalStation.name}`,
-        coordinates: {
-          latitude: optimalStation.latitude,
-          longitude: optimalStation.longitude,
-        },
-        distanceFromPrevious: distanceToStation,
-        durationFromPrevious: durationToStation,
+        location: `Traveling to ${stop.station.name}`,
+        coordinates: stationCoords,
+        distanceFromPrevious: distanceToStop,
+        durationFromPrevious: durationToStop,
         cumulativeDistance,
         cumulativeDuration,
-        batteryAtArrival: Math.max(batteryAtStation, CHARGING_ARRIVAL_MIN),
-        instructions: extractTravelInstructions(routeData, 0, 0.4),
+        batteryAtArrival: Math.max(stop.arrivalBattery, CHARGING_ARRIVAL_MIN),
+        instructions: extractTravelInstructions(
+          routeData,
+          (i === 0 ? 0 : optimizedRoute.stops[i - 1].distanceFromStart) / routeData.distance,
+          stop.distanceFromStart / routeData.distance
+        ),
       });
 
-      // Charging stop
-      // Cap station power to vehicle's maximum charging capability
-      const rawStationPower = optimalStation.powerKW || vehicle.fastChargingPower;
-      const stationPowerKW = Math.min(rawStationPower, vehicle.maxChargingPower);
+      segmentOrder++;
 
-      const chargingDuration = calculateChargingTime(
-        batteryAtStation,
-        CHARGING_TARGET_PERCENT,
-        stationPowerKW
+      // Charging stop segment
+      cumulativeDuration += stop.chargingTime;
+
+      // Update station with calculated pricing
+      const stationPowerKW = Math.min(
+        stop.station.powerKW || vehicle.fastChargingPower,
+        vehicle.maxChargingPower
       );
-      const energyCharged =
-        ((CHARGING_TARGET_PERCENT - batteryAtStation) / 100) * vehicle.batteryCapacity;
-
-      // Calculate dynamic pricing based on charging speed and station type
       const dynamicPricePerKwh = getPricePerKwh(
         stationPowerKW,
-        optimalStation.isTeslaSupercharger || false,
-        optimalStation.pricePerKwh
+        stop.station.isTeslaSupercharger || false,
+        stop.station.pricePerKwh
       );
-
-      // Calculate total charging cost (includes connection fee)
-      const chargingCost = calculateChargingCost(energyCharged, dynamicPricePerKwh, true);
-
-      // Update station price for display
-      optimalStation.pricePerKwh = dynamicPricePerKwh;
-
-      // Determine charging speed category for display
-      const speedCategory = getChargingSpeedCategory(stationPowerKW);
-      optimalStation.chargingSpeed = speedCategory;
-
-      // Debug logging for pricing
-      console.warn('💰 Charging Cost Breakdown:', {
-        stationPower: `${stationPowerKW} kW`,
-        speedCategory,
-        pricePerKwh: `₱${dynamicPricePerKwh}/kWh`,
-        energyCharged: `${energyCharged.toFixed(2)} kWh`,
-        energyCost: `₱${(energyCharged * dynamicPricePerKwh).toFixed(2)}`,
-        connectionFee: `₱${PRICING.connectionFee}`,
-        totalChargingCost: `₱${chargingCost.toFixed(2)}`,
-        chargingTime: `${chargingDuration} minutes`,
-      });
-
-      cumulativeDuration += chargingDuration;
+      stop.station.pricePerKwh = dynamicPricePerKwh;
+      stop.station.chargingSpeed = getChargingSpeedCategory(stationPowerKW);
 
       segments.push({
-        id: `segment-2`,
-        order: 2,
+        id: `segment-${segmentOrder}`,
+        order: segmentOrder,
         type: 'charging_station',
-        location: optimalStation.name,
-        coordinates: {
-          latitude: optimalStation.latitude,
-          longitude: optimalStation.longitude,
-        },
+        location: stop.station.name,
+        coordinates: stationCoords,
         distanceFromPrevious: 0,
         durationFromPrevious: 0,
         cumulativeDistance,
         cumulativeDuration,
-        batteryAtArrival: Math.max(batteryAtStation, CHARGING_ARRIVAL_MIN),
-        batteryAtDeparture: CHARGING_TARGET_PERCENT,
-        chargingStation: optimalStation,
-        chargingDuration,
-        energyCharged,
-        chargingCost,
+        batteryAtArrival: Math.max(stop.arrivalBattery, CHARGING_ARRIVAL_MIN),
+        batteryAtDeparture: stop.departureBattery,
+        chargingStation: stop.station,
+        chargingDuration: stop.chargingTime,
       });
 
+      segmentOrder++;
+
+      // Add to charging stops array for cost calculation
       chargingStops.push({
-        segmentId: `segment-2`,
-        station: optimalStation,
-        arrivalBattery: Math.max(batteryAtStation, CHARGING_ARRIVAL_MIN),
-        departureBattery: CHARGING_TARGET_PERCENT,
-        chargingDuration,
-        energyCharged,
-        cost: chargingCost,
+        segmentId: `segment-${segmentOrder - 1}`,
+        station: stop.station,
+        arrivalBattery: stop.arrivalBattery,
+        departureBattery: stop.departureBattery,
+        chargingDuration: stop.chargingTime,
+        energyCharged: stop.energyAdded,
+        cost: stop.cost,
         distanceFromStart: cumulativeDistance,
-        reasonForStop: 'Battery optimization for remaining distance',
+        reasonForStop: stop.reasonForStop,
       });
 
-      // Final leg to destination
-      const remainingDistance = routeData.distance - distanceToStation;
-      const remainingDuration = routeData.duration - durationToStation;
-      const batteryForRemaining = calculateBatteryConsumption(
-        remainingDistance,
-        CONSUMPTION_MULTIPLIERS.demo
-      );
-      const finalBattery = CHARGING_TARGET_PERCENT - batteryForRemaining;
-
-      cumulativeDistance += remainingDistance;
-      cumulativeDuration += remainingDuration;
-
-      segments.push({
-        id: `segment-3`,
-        order: 3,
-        type: 'travel',
-        location: `Traveling to ${to}`,
-        coordinates: toCoords,
-        distanceFromPrevious: remainingDistance,
-        durationFromPrevious: remainingDuration,
-        cumulativeDistance,
-        cumulativeDuration,
-        batteryAtArrival: Math.max(finalBattery, 0),
-        instructions: extractTravelInstructions(routeData, 0.4, 1.0),
-      });
-
-      segments.push({
-        id: `segment-4`,
-        order: 4,
-        type: 'destination',
-        location: to,
-        coordinates: toCoords,
-        distanceFromPrevious: 0,
-        durationFromPrevious: 0,
-        cumulativeDistance,
-        cumulativeDuration,
-        batteryAtArrival: Math.max(finalBattery, 0),
-      });
-    } else {
-      // No suitable charging station found - still create route but with warning
-      segments.push({
-        id: `segment-1`,
-        order: 1,
-        type: 'travel',
-        location: `Traveling to ${to}`,
-        coordinates: toCoords,
-        distanceFromPrevious: routeData.distance,
-        durationFromPrevious: routeData.duration,
-        cumulativeDistance: routeData.distance,
-        cumulativeDuration: routeData.duration,
-        batteryAtArrival: Math.max(batteryAtDestination, 0),
-        instructions: extractTravelInstructions(routeData),
-      });
-
-      segments.push({
-        id: `segment-2`,
-        order: 2,
-        type: 'destination',
-        location: to,
-        coordinates: toCoords,
-        distanceFromPrevious: 0,
-        durationFromPrevious: 0,
-        cumulativeDistance: routeData.distance,
-        cumulativeDuration: routeData.duration,
-        batteryAtArrival: Math.max(batteryAtDestination, 0),
-      });
+      currentBattery = stop.departureBattery;
     }
+
+    // Final travel segment to destination
+    const lastStop = optimizedRoute.stops[optimizedRoute.stops.length - 1];
+    const finalDistance = routeData.distance - lastStop.distanceFromStart;
+    const finalDuration = (finalDistance / routeData.distance) * routeData.duration;
+
+    cumulativeDistance += finalDistance;
+    cumulativeDuration += finalDuration;
+
+    segments.push({
+      id: `segment-${segmentOrder}`,
+      order: segmentOrder,
+      type: 'travel',
+      location: `Traveling to ${to}`,
+      coordinates: toCoords,
+      distanceFromPrevious: finalDistance,
+      durationFromPrevious: finalDuration,
+      cumulativeDistance,
+      cumulativeDuration,
+      batteryAtArrival: Math.max(optimizedRoute.finalBattery, 0),
+      instructions: extractTravelInstructions(
+        routeData,
+        lastStop.distanceFromStart / routeData.distance,
+        1.0
+      ),
+    });
+
+    segmentOrder++;
   }
+
+  // Destination segment
+  segments.push({
+    id: `segment-${segmentOrder}`,
+    order: segmentOrder,
+    type: 'destination',
+    location: to,
+    coordinates: toCoords,
+    distanceFromPrevious: 0,
+    durationFromPrevious: 0,
+    cumulativeDistance,
+    cumulativeDuration,
+    batteryAtArrival: Math.max(
+      optimizedRoute.stops.length > 0 ? optimizedRoute.finalBattery : currentBattery,
+      0
+    ),
+  });
 
   return { segments, chargingStops };
 }

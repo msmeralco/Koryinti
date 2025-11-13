@@ -1,9 +1,9 @@
 /**
- * Charging Stop Optimizer
- * Implements smart charging strategies similar to ABRP
- * - Minimize total trip time (multiple short stops)
- * - Minimize total cost (fewer stops, cheaper stations)
- * - Balance strategy based on user preferences
+ * Charging Stop Optimizer - ABRP Style
+ * Implements intelligent charging strategies based on user preferences
+ * - Strategy 0: Few long stops (charge to 85%, minimize stop count)
+ * - Strategy 1: Balanced (charge to 70%, balance time/convenience)
+ * - Strategy 2: Many short stops (charge to 55%, fastest overall time)
  */
 
 import {
@@ -13,14 +13,17 @@ import {
   CONSUMPTION_MULTIPLIERS,
   CHARGING_TARGET_PERCENT,
   MINIMUM_BATTERY_BUFFER,
+  interpolateChargeCurve,
 } from './standardVehicleModel';
 import { Station } from '@/types/navigation';
 
+export type StrategyType = 0 | 1 | 2; // Few long, Balanced, Many short
+
 export interface ChargingStrategy {
-  type: 'fastest' | 'cheapest' | 'balanced';
-  maxStops: number;
-  preferredChargingLevel: number; // Target % to charge to (60-90%)
-  avoidSlowChargers: boolean;
+  targetSoC: number; // Target state of charge %
+  minStopSoC: number; // Minimum SoC to arrive at station
+  preferHighPower: boolean; // Prefer faster chargers
+  description: string;
 }
 
 export interface OptimizedStop {
@@ -28,233 +31,276 @@ export interface OptimizedStop {
   arrivalBattery: number;
   departureBattery: number;
   chargingTime: number;
+  energyAdded: number; // kWh
   cost: number;
   distanceFromStart: number;
+  reasonForStop: string;
+}
+
+export interface OptimizedRoute {
+  stops: OptimizedStop[];
+  totalChargingTime: number;
+  totalCost: number;
+  totalDistance: number;
+  strategy: StrategyType;
+  finalBattery: number;
 }
 
 /**
- * Optimize charging stops for fastest overall trip time
- * Strategy: Multiple short stops charging to 50-60% (fast charging zone)
- * Avoid charging above 80% (slow and inefficient)
+ * Get charging strategy parameters based on user preference
  */
-export function optimizeForSpeed(
+export function getStrategy(type: StrategyType): ChargingStrategy {
+  const strategies: Record<StrategyType, ChargingStrategy> = {
+    0: {
+      // Few but long stops
+      targetSoC: 85,
+      minStopSoC: 15,
+      preferHighPower: false, // Cost matters more
+      description: 'Fewer stops, charge to 80-90%',
+    },
+    1: {
+      // Balanced
+      targetSoC: 70,
+      minStopSoC: 20,
+      preferHighPower: true,
+      description: 'Balanced approach',
+    },
+    2: {
+      // Many but short stops
+      targetSoC: 55,
+      minStopSoC: 25,
+      preferHighPower: true, // Speed matters most
+      description: 'Quick stops, charge to 50-60%',
+    },
+  };
+  
+  return strategies[type];
+}
+
+/**
+ * ABRP-style route optimization
+ * Considers: Vehicle specs, charge curve, station power, pricing, traffic
+ */
+export function optimizeRoute(
   totalDistance: number,
   currentBattery: number,
   availableStations: Station[],
-  minimumArrival: number = MINIMUM_BATTERY_BUFFER
-): OptimizedStop[] {
+  minimumArrival: number,
+  strategyType: StrategyType,
+  trafficMultiplier: number = 1.0
+): OptimizedRoute {
+  const strategy = getStrategy(strategyType);
   const stops: OptimizedStop[] = [];
+  
   let currentSoC = currentBattery;
   let distanceCovered = 0;
+  let totalChargingTime = 0;
+  let totalCost = 0;
 
-  // Strategy: Charge to 55% at each stop (sweet spot for speed)
-  const targetChargingLevel = 55;
+  // Apply traffic multiplier to consumption
+  const effectiveConsumption = STANDARD_VEHICLE.avgConsumption * CONSUMPTION_MULTIPLIERS.demo * trafficMultiplier;
 
   while (distanceCovered < totalDistance) {
-    // Calculate how far we can go with current battery
-    const batteryForTravel = currentSoC - minimumArrival;
-    const maxDistance =
-      ((batteryForTravel / 100) * STANDARD_VEHICLE.batteryCapacity) /
-      (STANDARD_VEHICLE.avgConsumption * CONSUMPTION_MULTIPLIERS.demo);
-
+    // Calculate maximum range with current battery
+    const availableEnergy = ((currentSoC - strategy.minStopSoC) / 100) * STANDARD_VEHICLE.batteryCapacity;
+    const maxRange = availableEnergy / effectiveConsumption;
     const remainingDistance = totalDistance - distanceCovered;
 
-    // Do we need to charge?
-    if (maxDistance < remainingDistance) {
-      // Yes - find next charging stop
-      const nextStopDistance = Math.min(maxDistance * 0.8, remainingDistance * 0.4);
+    // Do we need a charging stop?
+    if (maxRange < remainingDistance) {
+      // Yes - calculate optimal stop location
+      // ABRP strategy: Don't drain to absolute minimum, stop with buffer
+      const targetStopDistance = maxRange * 0.85; // Stop before getting too low
+      const nextStopDistance = Math.min(targetStopDistance, remainingDistance);
+      
       distanceCovered += nextStopDistance;
 
-      // Battery at station
-      const batteryUsed = calculateBatteryConsumption(
-        nextStopDistance,
-        CONSUMPTION_MULTIPLIERS.demo
-      );
+      // Calculate battery at arrival
+      const energyUsed = nextStopDistance * effectiveConsumption;
+      const batteryUsed = (energyUsed / STANDARD_VEHICLE.batteryCapacity) * 100;
       const arrivalBattery = currentSoC - batteryUsed;
 
-      // Find best station at this location (prefer high-power stations)
-      const station = findBestStationForSpeed(availableStations, distanceCovered);
+      // Safety check
+      if (arrivalBattery < strategy.minStopSoC) {
+        console.warn('Route requires charging below safe minimum');
+        break;
+      }
 
-      if (!station) break; // No stations available
+      // Find best station for this strategy
+      const station = selectBestStation(availableStations, distanceCovered, strategy, strategyType);
+      
+      if (!station) {
+        console.warn('No suitable station found at', distanceCovered, 'km');
+        break;
+      }
 
-      // Charge to target level (or what we need, whichever is higher)
-      const batteryNeeded =
-        calculateBatteryConsumption(
-          remainingDistance - nextStopDistance,
-          CONSUMPTION_MULTIPLIERS.demo
-        ) + minimumArrival;
+      // Calculate optimal departure SoC
+      const remainingAfterStop = totalDistance - distanceCovered;
+      const energyNeededToDestination = (remainingAfterStop * effectiveConsumption) + 
+        ((minimumArrival / 100) * STANDARD_VEHICLE.batteryCapacity);
+      const socNeededToDestination = (energyNeededToDestination / STANDARD_VEHICLE.batteryCapacity) * 100;
 
-      const departureBattery = Math.min(
-        Math.max(targetChargingLevel, batteryNeeded),
-        CHARGING_TARGET_PERCENT
-      );
+      // Target SoC: enough to reach destination OR strategy target, whichever is appropriate
+      let targetSoC: number;
+      if (remainingAfterStop < maxRange * 0.5) {
+        // Close to destination - charge just enough + buffer
+        targetSoC = Math.min(socNeededToDestination + 10, strategy.targetSoC);
+      } else {
+        // Long way to go - use strategy target
+        targetSoC = strategy.targetSoC;
+      }
 
-      const chargingTime = calculateChargingTime(
-        arrivalBattery,
-        departureBattery,
-        station.powerKW || 50
-      );
+      // Cap at vehicle/station limits
+      const departureBattery = Math.min(targetSoC, CHARGING_TARGET_PERCENT);
+
+      // Calculate charging time using real charge curve
+      const stationPower = Math.min(station.powerKW || 50, STANDARD_VEHICLE.maxChargingPower);
+      const chargingTime = calculateChargingTime(arrivalBattery, departureBattery, stationPower);
+
+      // Calculate energy and cost
+      const energyAdded = ((departureBattery - arrivalBattery) / 100) * STANDARD_VEHICLE.batteryCapacity;
+      const pricePerKwh = station.pricePerKwh || 0;
+      const connectionFee = station.connectionFee || 25;
+      const energyCost = energyAdded * pricePerKwh;
+      const cost = energyCost + connectionFee;
 
       stops.push({
         station,
         arrivalBattery,
         departureBattery,
         chargingTime,
-        cost: 0, // Will be calculated later
+        energyAdded,
+        cost,
         distanceFromStart: distanceCovered,
+        reasonForStop: determineStopReason(arrivalBattery, strategy, remainingAfterStop),
       });
 
+      totalChargingTime += chargingTime;
+      totalCost += cost;
       currentSoC = departureBattery;
     } else {
-      // No charging needed, we can reach destination
-      break;
+      // No charging needed - can reach destination
+      distanceCovered = totalDistance;
     }
   }
 
-  return stops;
-}
-
-/**
- * Optimize for lowest cost
- * Strategy: Fewer stops, charge to higher %, prefer cheaper stations
- */
-export function optimizeForCost(
-  totalDistance: number,
-  currentBattery: number,
-  availableStations: Station[],
-  minimumArrival: number = MINIMUM_BATTERY_BUFFER
-): OptimizedStop[] {
-  const stops: OptimizedStop[] = [];
-  let currentSoC = currentBattery;
-  let distanceCovered = 0;
-
-  // Strategy: Charge to 85% (fewer stops, despite slower charging)
-  const targetChargingLevel = 85;
-
-  while (distanceCovered < totalDistance) {
-    const batteryForTravel = currentSoC - minimumArrival;
-    const maxDistance =
-      ((batteryForTravel / 100) * STANDARD_VEHICLE.batteryCapacity) /
-      (STANDARD_VEHICLE.avgConsumption * CONSUMPTION_MULTIPLIERS.demo);
-
-    const remainingDistance = totalDistance - distanceCovered;
-
-    if (maxDistance < remainingDistance) {
-      // Need to charge - go as far as possible before stopping
-      const nextStopDistance = Math.min(maxDistance * 0.9, remainingDistance * 0.5);
-      distanceCovered += nextStopDistance;
-
-      const batteryUsed = calculateBatteryConsumption(
-        nextStopDistance,
-        CONSUMPTION_MULTIPLIERS.demo
-      );
-      const arrivalBattery = currentSoC - batteryUsed;
-
-      // Find cheapest station
-      const station = findCheapestStation(availableStations, distanceCovered);
-
-      if (!station) break;
-
-      const departureBattery = Math.min(targetChargingLevel, CHARGING_TARGET_PERCENT);
-
-      const chargingTime = calculateChargingTime(
-        arrivalBattery,
-        departureBattery,
-        station.powerKW || 50
-      );
-
-      stops.push({
-        station,
-        arrivalBattery,
-        departureBattery,
-        chargingTime,
-        cost: 0,
-        distanceFromStart: distanceCovered,
-      });
-
-      currentSoC = departureBattery;
-    } else {
-      break;
-    }
-  }
-
-  return stops;
-}
-
-/**
- * Find best station for speed optimization
- * Prioritize: High power > Availability > Distance from route
- */
-function findBestStationForSpeed(stations: Station[], targetDistance: number): Station | null {
-  if (!stations.length) return null;
-
-  // Score stations by power (higher is better)
-  const scored = stations.map(station => ({
-    station,
-    score: (station.powerKW || 50) / 50, // Normalized by 50 kW baseline
-  }));
-
-  // Sort by score (highest power first)
-  scored.sort((a, b) => b.score - a.score);
-
-  return scored[0]?.station || null;
-}
-
-/**
- * Find cheapest station
- * Prioritize: Low price > Power (still want reasonable speed)
- */
-function findCheapestStation(stations: Station[], targetDistance: number): Station | null {
-  if (!stations.length) return null;
-
-  // Score by price (lower is better)
-  const scored = stations.map(station => ({
-    station,
-    score: 50 / (station.pricePerKwh || 30), // Normalized
-  }));
-
-  scored.sort((a, b) => b.score - a.score);
-
-  return scored[0]?.station || null;
-}
-
-/**
- * Calculate total trip time including charging
- */
-export function calculateTotalTripTime(
-  drivingTimeMinutes: number,
-  chargingStops: OptimizedStop[]
-): number {
-  const totalChargingTime = chargingStops.reduce((sum, stop) => sum + stop.chargingTime, 0);
-  return drivingTimeMinutes + totalChargingTime;
-}
-
-/**
- * Compare strategies and return the best one
- */
-export function compareStrategies(
-  totalDistance: number,
-  currentBattery: number,
-  availableStations: Station[],
-  drivingTimeMinutes: number
-): {
-  fastest: { stops: OptimizedStop[]; totalTime: number };
-  cheapest: { stops: OptimizedStop[]; totalTime: number; totalCost: number };
-  recommended: 'fastest' | 'cheapest';
-} {
-  const fastestStops = optimizeForSpeed(totalDistance, currentBattery, availableStations);
-  const cheapestStops = optimizeForCost(totalDistance, currentBattery, availableStations);
-
-  const fastestTime = calculateTotalTripTime(drivingTimeMinutes, fastestStops);
-  const cheapestTime = calculateTotalTripTime(drivingTimeMinutes, cheapestStops);
-
-  // If time difference is less than 15 minutes, recommend cheapest
-  const timeDifference = cheapestTime - fastestTime;
-  const recommended = timeDifference < 15 ? 'cheapest' : 'fastest';
+  const finalBattery = currentSoC - ((totalDistance - distanceCovered) * effectiveConsumption / STANDARD_VEHICLE.batteryCapacity * 100);
 
   return {
-    fastest: { stops: fastestStops, totalTime: fastestTime },
-    cheapest: { stops: cheapestStops, totalTime: cheapestTime, totalCost: 0 },
+    stops,
+    totalChargingTime,
+    totalCost,
+    totalDistance,
+    strategy: strategyType,
+    finalBattery,
+  };
+}
+
+/**
+ * Select best station based on strategy
+ */
+function selectBestStation(
+  stations: Station[],
+  targetDistance: number,
+  strategy: ChargingStrategy,
+  strategyType: StrategyType
+): Station | null {
+  if (!stations.length) return null;
+
+  // Score each station
+  const scored = stations.map(station => {
+    let score = 0;
+    const power = station.powerKW || 50;
+    const price = station.pricePerKwh || 30;
+
+    switch (strategyType) {
+      case 0: // Few long stops - prioritize cost
+        score = (30 / price) * 0.7 + (power / 250) * 0.3;
+        break;
+      case 1: // Balanced
+        score = (power / 250) * 0.5 + (30 / price) * 0.5;
+        break;
+      case 2: // Many short stops - prioritize speed
+        score = (power / 250) * 0.8 + (30 / price) * 0.2;
+        break;
+    }
+
+    // Bonus for Tesla Superchargers (reliable, fast)
+    if (station.isTeslaSupercharger) {
+      score *= 1.2;
+    }
+
+    // Penalty for low availability
+    if (station.availableChargers && station.totalChargers) {
+      const availabilityRatio = station.availableChargers / station.totalChargers;
+      score *= (0.5 + availabilityRatio * 0.5);
+    }
+
+    return { station, score };
+  });
+
+  // Sort by score (highest first)
+  scored.sort((a, b) => b.score - a.score);
+
+  return scored[0]?.station || null;
+}
+
+/**
+ * Determine why we're stopping at this station
+ */
+function determineStopReason(arrivalBattery: number, strategy: ChargingStrategy, remainingDistance: number): string {
+  if (arrivalBattery < strategy.minStopSoC + 5) {
+    return 'Low battery - necessary stop';
+  }
+  if (remainingDistance > 200) {
+    return 'Long distance ahead';
+  }
+  return 'Optimal charging stop';
+}
+
+/**
+ * Compare different strategies for user
+ */
+export function compareAllStrategies(
+  totalDistance: number,
+  currentBattery: number,
+  availableStations: Station[],
+  minimumArrival: number,
+  drivingTimeMinutes: number,
+  trafficMultiplier: number = 1.0
+): {
+  fewLong: OptimizedRoute & { totalTime: number };
+  balanced: OptimizedRoute & { totalTime: number };
+  manyShort: OptimizedRoute & { totalTime: number };
+  recommended: StrategyType;
+} {
+  const strategies: StrategyType[] = [0, 1, 2];
+  const results = strategies.map(type => {
+    const route = optimizeRoute(totalDistance, currentBattery, availableStations, minimumArrival, type, trafficMultiplier);
+    return {
+      ...route,
+      totalTime: drivingTimeMinutes + route.totalChargingTime,
+    };
+  });
+
+  // Determine recommendation
+  // If time difference between strategies is minimal (<15 min), recommend fewer stops
+  // Otherwise recommend fastest
+  const timeDiff = results[0].totalTime - results[2].totalTime;
+  let recommended: StrategyType;
+  
+  if (Math.abs(timeDiff) < 15) {
+    recommended = 0; // Few long stops if time is similar
+  } else if (results[2].totalTime < results[0].totalTime) {
+    recommended = 2; // Many short if significantly faster
+  } else {
+    recommended = 1; // Balanced as fallback
+  }
+
+  return {
+    fewLong: results[0],
+    balanced: results[1],
+    manyShort: results[2],
     recommended,
   };
 }
