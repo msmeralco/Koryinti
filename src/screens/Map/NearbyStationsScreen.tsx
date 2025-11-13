@@ -11,12 +11,12 @@ const formatDistance = (km: number) =>
 
 export default function NearbyStationsScreen({ navigation, route }: Props) {
   const { stations } = route.params;
-  const sortLabels: Record<typeof sortKey, string> = {
+  const [sortKey, setSortKey] = React.useState<'distance'|'rating'|'availability'>('distance');
+  const sortLabels: Record<'distance'|'rating'|'availability', string> = {
     distance: 'Distance',
     rating: 'Rating',
     availability: 'Availability',
   };
-  const [sortKey, setSortKey] = React.useState<'distance'|'rating'|'availability'>('distance');
   const [showAvailableOnly, setShowAvailableOnly] = React.useState(false);
   const [plugFilter, setPlugFilter] = React.useState<string | null>(null);
   const [showFiltersOpen, setShowFiltersOpen] = React.useState(false);
@@ -108,7 +108,7 @@ export default function NearbyStationsScreen({ navigation, route }: Props) {
             )
           }
         >
-          <Text style={styles.controlBtnText}>Sort: {sortKey}</Text>
+          <Text style={styles.controlBtnText}>Sort: {sortLabels[sortKey]}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.controlBtn} onPress={() => setShowAvailableOnly(v => !v)}>
           <Text style={styles.controlBtnText}>
@@ -117,25 +117,26 @@ export default function NearbyStationsScreen({ navigation, route }: Props) {
         </TouchableOpacity>
       </View>
       <View style={styles.filterRow}>
-        {distinctPlugTypes.map(pt => (
-          <TouchableOpacity
-            key={pt}
-            style={[styles.filterChip, plugFilter === pt && styles.filterChipActive]}
-            onPress={() => setPlugFilter(plugFilter === pt ? null : pt)}
-          >
-            <Text style={[styles.filterChipText, plugFilter === pt && styles.filterChipTextActive]}>
-              {pt}
-            </Text>
+        {/* Filters dropdown anchored to button */}
+        <View style={styles.dropdownWrapper}>
+          <TouchableOpacity style={styles.controlBtn} onPress={() => setShowFiltersOpen(o => !o)}>
+            <Text style={styles.controlBtnText}>Filters</Text>
           </TouchableOpacity>
           {showFiltersOpen && (
             <View style={styles.dropdownAbsolute}>
-              <View style={{paddingVertical:8}}>
+              <View style={{ paddingVertical: 8 }}>
                 <Text style={styles.dropdownText}>Plugs</Text>
               </View>
               <View style={styles.filterRowInline}>
                 {distinctPlugTypes.map(pt => (
-                  <TouchableOpacity key={pt} style={[styles.filterChip, plugFilter===pt && styles.filterChipActive]} onPress={() => setPlugFilter(plugFilter===pt? null : pt)}>
-                    <Text style={[styles.filterChipText, plugFilter===pt && styles.filterChipTextActive]}>{pt}</Text>
+                  <TouchableOpacity
+                    key={pt}
+                    style={[styles.filterChip, plugFilter === pt && styles.filterChipActive]}
+                    onPress={() => setPlugFilter(plugFilter === pt ? null : pt)}
+                  >
+                    <Text style={[styles.filterChipText, plugFilter === pt && styles.filterChipTextActive]}>
+                      {pt}
+                    </Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -143,6 +144,7 @@ export default function NearbyStationsScreen({ navigation, route }: Props) {
           )}
         </View>
 
+        {/* Range dropdown anchored to button */}
         <View style={styles.dropdownWrapper}>
           <TouchableOpacity style={styles.controlBtn} onPress={() => setShowRangeOpen(r => !r)}>
             <Text style={styles.controlBtnText}>Range: {rangeKm}km</Text>
