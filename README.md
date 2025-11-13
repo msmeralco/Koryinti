@@ -1,4 +1,4 @@
-# Revolt ⚡
+# Revolt
 
 **EV Charging Station Finder & Reservation System**
 
@@ -6,28 +6,31 @@ A React Native mobile application built with Expo that helps electric vehicle ow
 
 ---
 
-## 🎯 Project Status: MVP Development
+## Project Status: MVP Development
 
 This is an **MVP (Minimum Viable Product)** focused on core functionality and collaboration infrastructure. The project emphasizes:
-- ✅ Clean code architecture
-- ✅ Type-safe TypeScript implementation
-- ✅ Automated CI/CD pipelines
-- ✅ Security best practices
-- ✅ Branch-based collaboration workflow
+
+- Clean code architecture
+- Type-safe TypeScript implementation
+- Automated CI/CD pipelines
+- Security best practices
+- Branch-based collaboration workflow
 
 ---
 
-## ✨ Features
+## Features
 
 ### Current MVP Features
-- 📍 **Find Nearby Stations** - Browse charging stations by proximity
-- 🗺️ **Trip Planning** - Plan routes with suggested charging stops
-- 📅 **Reservations** - Reserve charging slots at stations
-- ⭐ **Ratings** - Rate charging experiences
-- 👤 **User Profile** - Manage vehicles and payment methods
-- 📱 **Expo Go Ready** - Instant testing on physical devices
+
+- **Find Nearby Stations** - Browse charging stations by proximity
+- **Trip Planning** - Plan routes with suggested charging stops
+- **Reservations** - Reserve charging slots at stations
+- **Ratings** - Rate charging experiences
+- **User Profile** - Manage vehicles and payment methods
+- **Expo Go Ready** - Instant testing on physical devices
 
 ### Planned Features
+
 - Real-time station availability
 - Payment integration (Stripe)
 - Push notifications for reservations
@@ -37,7 +40,7 @@ This is an **MVP (Minimum Viable Product)** focused on core functionality and co
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Installation
 
@@ -58,13 +61,14 @@ npm start
 ```
 
 ### Run on Device
+
 1. Install **Expo Go** on your phone ([iOS](https://apps.apple.com/app/expo-go/id982107779) | [Android](https://play.google.com/store/apps/details?id=host.exp.exponent))
 2. Scan QR code from terminal
-3. Start testing!
+3. Start testing.
 
 ---
 
-## 📱 App Flow Overview
+## App Flow Overview
 
 ```
 ┌─────────────────┐
@@ -97,22 +101,22 @@ Trip Planning Flow:
 
 ---
 
-## 🏗️ Tech Stack
+## Tech Stack
 
-| Category | Technology |
-|----------|-----------|
-| **Framework** | React Native + Expo |
-| **Language** | TypeScript |
-| **Navigation** | React Navigation v6 |
-| **Maps** | React Native Maps |
+| Category             | Technology                           |
+| -------------------- | ------------------------------------ |
+| **Framework**        | React Native + Expo                  |
+| **Language**         | TypeScript                           |
+| **Navigation**       | React Navigation v6                  |
+| **Maps**             | React Native Maps                    |
 | **State Management** | React Hooks (Context API for future) |
-| **Code Quality** | ESLint + Prettier |
-| **CI/CD** | GitHub Actions |
-| **Testing** | Jest (planned) |
+| **Code Quality**     | ESLint + Prettier                    |
+| **CI/CD**            | GitHub Actions                       |
+| **Testing**          | Jest (planned)                       |
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 Revolt/
@@ -132,17 +136,19 @@ Revolt/
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 We follow a structured Git workflow for collaboration:
 
 ### Branch Strategy
+
 - `main` - Production code
 - `develop` - Integration branch
 - `feature/*` - New features
 - `bugfix/*` - Bug fixes
 
 ### Workflow
+
 ```bash
 # 1. Create feature branch
 git checkout -b feature/my-feature
@@ -165,10 +171,12 @@ git push origin feature/my-feature
 
 ---
 
-## 🔒 Security
+## Security
 
 ### Environment Variables
+
 All sensitive data stored in `.env` (never committed):
+
 ```env
 GOOGLE_MAPS_API_KEY=your_key
 API_BASE_URL=https://api.example.com
@@ -176,29 +184,31 @@ STRIPE_PUBLISHABLE_KEY=pk_test_xxx
 ```
 
 ### Security Features
-- ✅ Environment-based configuration
-- ✅ `.env` in `.gitignore`
-- ✅ Automated security audits in CI/CD
-- ✅ No hardcoded secrets
-- ✅ Secret scanning with TruffleHog
+
+- Environment-based configuration
+- `.env` in `.gitignore`
+- Automated security audits in CI/CD
+- No hardcoded secrets
+- Secret scanning with TruffleHog
 
 ---
 
-## 🔄 CI/CD Pipeline
+## CI/CD Pipeline
 
 Every push and PR automatically runs:
-- ✅ ESLint code quality checks
-- ✅ TypeScript type validation
-- ✅ Prettier formatting verification
-- ✅ npm security audit
-- ✅ Expo configuration check
-- ✅ Secret scanning
+
+- ESLint code quality checks
+- TypeScript type validation
+- Prettier formatting verification
+- npm security audit
+- Expo configuration check
+- Secret scanning
 
 **Pipeline must pass before merging.**
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 - **[DEVELOPMENT.md](./DEVELOPMENT.md)** - Complete development guide
   - Setup instructions
@@ -209,7 +219,7 @@ Every push and PR automatically runs:
 
 ---
 
-## 🛠️ Development Scripts
+## Development Scripts
 
 ```bash
 npm start          # Start Expo dev server
@@ -223,28 +233,28 @@ npm run type-check # TypeScript validation
 
 ---
 
-## 📖 Screen Reference
+## Screen Reference
 
-| Screen | Purpose | Navigation |
-|--------|---------|------------|
-| Registration | Welcome screen | → AddVehicle |
-| AddVehicle | Vehicle setup | → MainTabs |
-| MapHome | Main map view | → NearbyStations / PlanTrip |
-| NearbyStations | Station list | → StationProfile |
-| StationProfile | Station details | → ReserveStation |
-| ReserveStation | Time/duration picker | → ConfirmPayment |
-| ConfirmPayment | Payment screen | → ReservationDetails |
-| PlanTrip | Route input | → TripRoute |
-| TripRoute | Route with stops | → ReservationDetails |
-| ReservationDetails | Active booking | → ScanQR |
-| ScanQR | QR code scanner | → Rating |
-| Rating | Post-session feedback | → MapHome |
-| Profile | User settings | - |
-| Reservations | Booking history | - |
+| Screen             | Purpose               | Navigation                  |
+| ------------------ | --------------------- | --------------------------- |
+| Registration       | Welcome screen        | → AddVehicle                |
+| AddVehicle         | Vehicle setup         | → MainTabs                  |
+| MapHome            | Main map view         | → NearbyStations / PlanTrip |
+| NearbyStations     | Station list          | → StationProfile            |
+| StationProfile     | Station details       | → ReserveStation            |
+| ReserveStation     | Time/duration picker  | → ConfirmPayment            |
+| ConfirmPayment     | Payment screen        | → ReservationDetails        |
+| PlanTrip           | Route input           | → TripRoute                 |
+| TripRoute          | Route with stops      | → ReservationDetails        |
+| ReservationDetails | Active booking        | → ScanQR                    |
+| ScanQR             | QR code scanner       | → Rating                    |
+| Rating             | Post-session feedback | → MapHome                   |
+| Profile            | User settings         | -                           |
+| Reservations       | Booking history       | -                           |
 
 ---
 
-## 🎨 Code Style
+## Code Style
 
 - **TypeScript**: Strict mode enabled
 - **Components**: Functional components with hooks
@@ -253,6 +263,7 @@ npm run type-check # TypeScript validation
 - **No comments**: Prefer self-documenting code and docstrings
 
 Example:
+
 ```typescript
 /**
  * StationProfileScreen displays detailed information about a charging station
@@ -265,21 +276,22 @@ export default function StationProfileScreen({ navigation, route }: Props) {
 
 ---
 
-## 🐛 Known Issues / MVP Limitations
+## Known Issues / MVP Limitations
 
-- ⚠️ Mock data for stations (no backend integration)
-- ⚠️ Simulated QR scanning (no camera access)
-- ⚠️ Placeholder payment flow (no Stripe integration)
-- ⚠️ No real-time availability updates
-- ⚠️ Simplified authentication (no user accounts)
+- Mock data for stations (no backend integration)
+- Simulated QR scanning (no camera access)
+- Placeholder payment flow (no Stripe integration)
+- No real-time availability updates
+- Simplified authentication (no user accounts)
 
 **These are intentional MVP constraints. Full features planned for future releases.**
 
 ---
 
-## 📞 Support
+## Support
 
 For questions or issues:
+
 1. Check [DEVELOPMENT.md](./DEVELOPMENT.md) troubleshooting section
 2. Review existing GitHub Issues
 3. Create new issue with detailed description
@@ -287,15 +299,16 @@ For questions or issues:
 
 ---
 
-## 📄 License
+## License
 
 Private and proprietary to Revolt.
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 Built with:
+
 - [Expo](https://expo.dev/) - React Native framework
 - [React Navigation](https://reactnavigation.org/) - Navigation library
 - [TypeScript](https://www.typescriptlang.org/) - Type safety
@@ -303,4 +316,4 @@ Built with:
 
 ---
 
-**Ready to contribute?** Read [DEVELOPMENT.md](./DEVELOPMENT.md) and start coding! 🚀
+**Ready to contribute?** Read [DEVELOPMENT.md](./DEVELOPMENT.md) and start coding!
