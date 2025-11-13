@@ -1,27 +1,13 @@
 import React, { useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Animated,
-  Dimensions,
-} from 'react-native';
-import {
-  createBottomTabNavigator,
-  BottomTabBarProps,
-} from '@react-navigation/bottom-tabs';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions } from 'react-native';
+import { createBottomTabNavigator, BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { MainTabsParamList } from '@/types/navigation';
 
 import MapNavigator from './MapNavigator';
 import ProfileScreen from '@/screens/Profile/ProfileScreen';
 import ReservationsScreen from '@/screens/Reservations/ReservationsScreen';
 
-import {
-  Ionicons,
-  Feather,
-  MaterialCommunityIcons,
-} from '@expo/vector-icons';
+import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 
 const Tab = createBottomTabNavigator<MainTabsParamList>();
 /**
@@ -55,14 +41,17 @@ function TabItem({
         </View>
       </View>
     );
+  }
+  return (
+    <View style={styles.tabWrapper}>
+      <IconComponent name={iconName} size={22} color={INACTIVE_ICON} />
+    </View>
+  );
+}
 
 // ---------- helpers ----------
 const getLabel = (name: string) =>
-  name === 'Map'
-    ? 'Home'
-    : name === 'Reservations'
-    ? 'Sessions'
-    : 'Profile';
+  name === 'Map' ? 'Home' : name === 'Reservations' ? 'Sessions' : 'Profile';
 
 // pill width based on icon + label + symmetric padding
 const getPillWidthForRoute = (routeName: string, tabWidth: number) => {
@@ -85,13 +74,7 @@ const getIcon = (name: string, color: string, size: number) => {
     case 'Map':
       return <Ionicons name="home-outline" size={size} color={color} />;
     case 'Reservations':
-      return (
-        <MaterialCommunityIcons
-          name="clipboard-text-outline"
-          size={size}
-          color={color}
-        />
-      );
+      return <MaterialCommunityIcons name="clipboard-text-outline" size={size} color={color} />;
     case 'Profile':
       return <Feather name="user" size={size} color={color} />;
     default:
@@ -110,9 +93,7 @@ function AnimatedTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
 
   const animatedIndex = useRef(new Animated.Value(state.index)).current;
   const animatedWidth = useRef(
-    new Animated.Value(
-      getPillWidthForRoute(state.routes[state.index].name, tabWidth),
-    ),
+    new Animated.Value(getPillWidthForRoute(state.routes[state.index].name, tabWidth))
   ).current;
 
   useEffect(() => {
@@ -138,11 +119,11 @@ function AnimatedTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   // pill horizontal movement
   const centerTranslateX = Animated.add(
     Animated.multiply(animatedIndex, new Animated.Value(tabWidth)),
-    new Animated.Value(tabWidth / 2),
+    new Animated.Value(tabWidth / 2)
   );
   const pillTranslateX = Animated.subtract(
     centerTranslateX,
-    Animated.divide(animatedWidth, new Animated.Value(2)),
+    Animated.divide(animatedWidth, new Animated.Value(2))
   );
 
   return (
@@ -207,7 +188,6 @@ function AnimatedTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
             accessibilityRole="button"
             accessibilityState={isFocused ? { selected: true } : {}}
             accessibilityLabel={options.tabBarAccessibilityLabel}
-            testID={options.tabBarTestID}
             onPress={onPress}
             onLongPress={onLongPress}
             style={[styles.tabItem, { width: tabWidth, height: barHeight }]}
@@ -247,7 +227,7 @@ export default function MainTabsNavigator() {
   return (
     <Tab.Navigator
       screenOptions={{ headerShown: false }}
-      tabBar={(props) => <AnimatedTabBar {...props} />}
+      tabBar={props => <AnimatedTabBar {...props} />}
     >
       {/* HOME (MapNavigator) */}
       <Tab.Screen
@@ -291,9 +271,6 @@ export default function MainTabsNavigator() {
           ),
         }}
       />
-      <Tab.Screen name="Map" component={MapNavigator} />
-      <Tab.Screen name="Reservations" component={ReservationsScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
 }
@@ -325,5 +302,14 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  tabWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pillLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
 });
