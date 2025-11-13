@@ -68,18 +68,41 @@ export async function calculateDetailedRoute(
     const routeData: RouteResult = await calculateOpenRoute(fromCoords, toCoords, true, false);
 
     // Step 3: Check if charging is needed
+    // Using DEMO mode with aggressive battery degradation for presentation
     const vehicle = getStandardVehicle();
-    const requiresCharging = needsCharging(currentBatteryPercent, routeData.distance);
+    const requiresCharging = needsCharging(
+      currentBatteryPercent,
+      routeData.distance,
+      CONSUMPTION_MULTIPLIERS.demo,
+      minimumArrivalBattery
+    );
+
+    // Debug logging
+    const batteryUsed = calculateBatteryConsumption(
+      routeData.distance,
+      CONSUMPTION_MULTIPLIERS.demo
+    );
+    const batteryAtDestination = currentBatteryPercent - batteryUsed;
+    console.warn('🔋 Battery Calculation:', {
+      currentBattery: `${currentBatteryPercent}%`,
+      distance: `${routeData.distance.toFixed(2)} km`,
+      batteryUsed: `${batteryUsed.toFixed(2)}%`,
+      batteryAtDestination: `${batteryAtDestination.toFixed(2)}%`,
+      minimumRequired: `${minimumArrivalBattery}%`,
+      requiresCharging,
+    });
 
     // Step 4: Find charging stations if needed
     let chargingStations: Station[] = [];
     if (requiresCharging) {
       const rawStations = await searchStationsAlongRoute(routeData.geometry, maxDetourKm);
+      console.warn(`🔍 Found ${rawStations.length} raw charging stations`);
       const filtered = filterStations(rawStations, {
-        onlyAvailable: true,
-        onlyFastChargers: preferFastChargers,
-        minPowerKW: preferFastChargers ? 50 : 22,
+        onlyAvailable: false, // Don't filter by availability - many stations don't report this
+        onlyFastChargers: false, // Accept all chargers for demo
+        minPowerKW: undefined, // No minimum power requirement for demo
       });
+      console.warn(`✅ Filtered to ${filtered.length} suitable charging stations`);
       chargingStations = convertStationsToAppFormat(filtered);
     }
 
@@ -99,17 +122,18 @@ export async function calculateDetailedRoute(
     const costBreakdown = calculateCosts(chargingStops);
 
     // Step 7: Build detailed route object
+    // Using aggressive demo consumption multiplier
     const totalChargingTime = chargingStops.reduce((sum, stop) => sum + stop.chargingDuration, 0);
     const totalEnergyCharged = chargingStops.reduce((sum, stop) => sum + stop.energyCharged, 0);
     const totalEnergyUsed =
-      ((routeData.distance * vehicle.avgConsumption * CONSUMPTION_MULTIPLIERS.highway) /
+      ((routeData.distance * vehicle.avgConsumption * CONSUMPTION_MULTIPLIERS.demo) /
         vehicle.batteryCapacity) *
       100;
 
     const finalBattery =
       currentBatteryPercent +
       chargingStops.reduce((sum, stop) => sum + (stop.departureBattery - stop.arrivalBattery), 0) -
-      calculateBatteryConsumption(routeData.distance, CONSUMPTION_MULTIPLIERS.highway);
+      calculateBatteryConsumption(routeData.distance, CONSUMPTION_MULTIPLIERS.demo);
 
     const detailedRoute: DetailedRoute = {
       id: `route-${Date.now()}`,
@@ -182,7 +206,7 @@ function planRouteSegments(
   // Check if we need charging stops
   const batteryNeeded = calculateBatteryConsumption(
     routeData.distance,
-    CONSUMPTION_MULTIPLIERS.highway
+    CONSUMPTION_MULTIPLIERS.demo // Use aggressive demo consumption
   );
   const batteryAtDestination = currentBattery - batteryNeeded;
 
@@ -232,7 +256,7 @@ function planRouteSegments(
       const durationToStation = routeData.duration * 0.4;
       const batteryAtStation =
         currentBattery -
-        calculateBatteryConsumption(distanceToStation, CONSUMPTION_MULTIPLIERS.highway);
+        calculateBatteryConsumption(distanceToStation, CONSUMPTION_MULTIPLIERS.demo);
 
       cumulativeDistance += distanceToStation;
       cumulativeDuration += durationToStation;
@@ -305,7 +329,7 @@ function planRouteSegments(
       const remainingDuration = routeData.duration - durationToStation;
       const batteryForRemaining = calculateBatteryConsumption(
         remainingDistance,
-        CONSUMPTION_MULTIPLIERS.highway
+        CONSUMPTION_MULTIPLIERS.demo
       );
       const finalBattery = CHARGING_TARGET_PERCENT - batteryForRemaining;
 
@@ -520,13 +544,12 @@ function toRad(degrees: number): number {
 function calculateCosts(chargingStops: ChargingStop[]): CostBreakdown {
   const chargingCost = chargingStops.reduce((sum, stop) => sum + stop.cost, 0);
   const bookingFee = chargingCost * PRICING.bookingFeeRate;
-  const serviceFee = PRICING.serviceFee;
-  const totalCost = chargingCost + bookingFee + serviceFee;
+  const totalCost = chargingCost + bookingFee;
 
   return {
     chargingCost: Math.round(chargingCost * 100) / 100,
     bookingFee: Math.round(bookingFee * 100) / 100,
-    serviceFee,
+    serviceFee: 0, // No service fee for presentation
     totalCost: Math.round(totalCost * 100) / 100,
   };
 }

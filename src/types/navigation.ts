@@ -18,7 +18,12 @@ export type MapStackParamList = {
   ReserveStation: { stationId: string };
   ConfirmPayment: { stationId: string; reservationDetails: ReservationDetails };
   PlanTrip: undefined;
-  TripRoute: { from: string; to: string; currentBatteryPercent?: number };
+  TripRoute: {
+    from: string;
+    to: string;
+    currentBatteryPercent?: number;
+    minimumArrivalBattery?: number;
+  };
   ReservationDetails: { routeId: string; stations: EnrichedStation[] };
   ScanQR: { reservationId: string };
   Rating: { stationId: string; reservationId: string };

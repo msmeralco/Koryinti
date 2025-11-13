@@ -32,6 +32,7 @@ export default function PlanTripScreen({ navigation }: Props) {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [batteryPercent, setBatteryPercent] = useState(80); // Default 80%
+  const [minArrivalBattery, setMinArrivalBattery] = useState(25); // Minimum battery at destination
   const [fromSuggestions, setFromSuggestions] = useState<GeocodingResult[]>([]);
   const [toSuggestions, setToSuggestions] = useState<GeocodingResult[]>([]);
   const [searchingFrom, setSearchingFrom] = useState(false);
@@ -137,7 +138,12 @@ export default function PlanTripScreen({ navigation }: Props) {
   const handlePlanRoute = () => {
     if (from && to) {
       Keyboard.dismiss();
-      navigation.navigate('TripRoute', { from, to, currentBatteryPercent: batteryPercent });
+      navigation.navigate('TripRoute', {
+        from,
+        to,
+        currentBatteryPercent: batteryPercent,
+        minimumArrivalBattery: minArrivalBattery,
+      });
     }
   };
 
@@ -286,31 +292,40 @@ export default function PlanTripScreen({ navigation }: Props) {
               )}
             </View>
 
-            {/* Battery Level Selector */}
+            {/* Battery Level Input */}
             <View style={styles.batteryContainer}>
-              <Text style={styles.batteryLabel}>Current Battery Level</Text>
-              <View style={styles.batterySelector}>
-                {[20, 40, 60, 80, 100].map(level => (
-                  <TouchableOpacity
-                    key={level}
-                    style={[
-                      styles.batteryOption,
-                      batteryPercent === level && styles.batteryOptionSelected,
-                    ]}
-                    onPress={() => setBatteryPercent(level)}
-                  >
-                    <Text
-                      style={[
-                        styles.batteryOptionText,
-                        batteryPercent === level && styles.batteryOptionTextSelected,
-                      ]}
-                    >
-                      {level}%
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-              <Text style={styles.batteryHint}>Select your current battery percentage</Text>
+              <Text style={styles.batteryLabel}>Current Battery Level (%)</Text>
+              <TextInput
+                style={styles.batteryInput}
+                placeholder="Enter battery percentage (0-100)"
+                value={batteryPercent.toString()}
+                onChangeText={text => {
+                  const num = parseInt(text) || 0;
+                  setBatteryPercent(Math.min(Math.max(num, 0), 100));
+                }}
+                keyboardType="number-pad"
+                maxLength={3}
+              />
+              <Text style={styles.batteryHint}>Enter your current battery percentage (0-100%)</Text>
+            </View>
+
+            {/* Minimum Arrival Battery Input */}
+            <View style={styles.batteryContainer}>
+              <Text style={styles.batteryLabel}>Minimum Arrival Battery (%)</Text>
+              <TextInput
+                style={styles.batteryInput}
+                placeholder="Minimum battery at destination (0-100)"
+                value={minArrivalBattery.toString()}
+                onChangeText={text => {
+                  const num = parseInt(text) || 0;
+                  setMinArrivalBattery(Math.min(Math.max(num, 0), 100));
+                }}
+                keyboardType="number-pad"
+                maxLength={3}
+              />
+              <Text style={styles.batteryHint}>
+                Charging stations will be recommended if needed to reach this level
+              </Text>
             </View>
 
             <TouchableOpacity
@@ -440,32 +455,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 10,
   },
-  batterySelector: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  batteryOption: {
-    flex: 1,
-    paddingVertical: 12,
-    marginHorizontal: 3,
-    borderRadius: 8,
+  batteryInput: {
     borderWidth: 1,
     borderColor: '#ddd',
-    backgroundColor: '#f9f9f9',
-    alignItems: 'center',
-  },
-  batteryOptionSelected: {
-    backgroundColor: '#4CAF50',
-    borderColor: '#4CAF50',
-  },
-  batteryOptionText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#666',
-  },
-  batteryOptionTextSelected: {
-    color: '#fff',
+    borderRadius: 8,
+    padding: 15,
+    fontSize: 16,
+    marginBottom: 8,
   },
   batteryHint: {
     fontSize: 12,

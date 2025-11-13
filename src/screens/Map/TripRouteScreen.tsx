@@ -16,7 +16,7 @@ import { DetailedRoute, RouteSegment } from '@/types/route-calculation';
 type Props = NativeStackScreenProps<MapStackParamList, 'TripRoute'>;
 
 export default function TripRouteScreen({ navigation, route }: Props) {
-  const { from, to, currentBatteryPercent = 80 } = route.params;
+  const { from, to, currentBatteryPercent = 80, minimumArrivalBattery = 25 } = route.params;
 
   const [detailedRoute, setDetailedRoute] = useState<DetailedRoute | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -58,10 +58,19 @@ export default function TripRouteScreen({ navigation, route }: Props) {
           currentBatteryPercent,
           preferFastChargers: true,
           maxDetourKm: 5,
+          minimumArrivalBattery,
         });
         if (mounted) {
           if (result.success && result.route) {
             setDetailedRoute(result.route);
+            console.warn('✅ Route calculated successfully:', {
+              chargingStops: result.route.chargingStops.length,
+              segments: result.route.segments.length,
+              distance: result.route.totalDistance,
+            });
+            if (result.route.chargingStops.length > 0) {
+              console.warn('🔋 Charging stops:', result.route.chargingStops);
+            }
           } else {
             setError(result.error || 'Failed to calculate route');
           }
@@ -80,7 +89,7 @@ export default function TripRouteScreen({ navigation, route }: Props) {
     return () => {
       mounted = false;
     };
-  }, [from, to, currentBatteryPercent]);
+  }, [from, to, currentBatteryPercent, minimumArrivalBattery]);
 
   const handleReserveChargers = () => {
     if (!detailedRoute || detailedRoute.chargingStops.length === 0) return;
@@ -148,15 +157,22 @@ export default function TripRouteScreen({ navigation, route }: Props) {
         <Polyline coordinates={detailedRoute.polyline} strokeColor="#4CAF50" strokeWidth={4} />
 
         {/* Charging station markers */}
-        {detailedRoute.chargingStops.map((stop, index) => (
-          <Marker
-            key={`charging-${index}`}
-            coordinate={{ latitude: stop.station.latitude, longitude: stop.station.longitude }}
-            title={stop.station.name}
-            description={`Stop ${index + 1} • ${stop.chargingDuration} min charge`}
-            pinColor="#4CAF50"
-          />
-        ))}
+        {detailedRoute.chargingStops.map((stop, index) => {
+          console.warn(`� Rendering charging marker ${index + 1}:`, {
+            name: stop.station.name,
+            lat: stop.station.latitude,
+            lon: stop.station.longitude,
+          });
+          return (
+            <Marker
+              key={`charging-${index}`}
+              coordinate={{ latitude: stop.station.latitude, longitude: stop.station.longitude }}
+              title={stop.station.name}
+              description={`Stop ${index + 1} • ${stop.chargingDuration} min charge`}
+              pinColor="#4CAF50"
+            />
+          );
+        })}
 
         {/* Start marker */}
         <Marker
@@ -239,12 +255,6 @@ export default function TripRouteScreen({ navigation, route }: Props) {
                   <Text style={styles.costLabel}>Booking Fee (2%)</Text>
                   <Text style={styles.costValue}>
                     ₱{detailedRoute.costBreakdown.bookingFee.toFixed(2)}
-                  </Text>
-                </View>
-                <View style={styles.costRow}>
-                  <Text style={styles.costLabel}>Service Fee</Text>
-                  <Text style={styles.costValue}>
-                    ₱{detailedRoute.costBreakdown.serviceFee.toFixed(2)}
                   </Text>
                 </View>
                 <View style={styles.dividerThin} />

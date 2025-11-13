@@ -40,6 +40,7 @@ export const CONSUMPTION_MULTIPLIERS = {
   downhill: 0.85, // Regenerative braking benefit
   withAC: 1.08, // Air conditioning usage (future)
   coldWeather: 1.12, // Battery efficiency loss in cold (future)
+  demo: 2.8, // Aggressive consumption for demo/presentation purposes to showcase charging needs
 };
 
 /**
@@ -91,16 +92,23 @@ export function calculateBatteryConsumption(
 
 /**
  * Check if charging is needed for a trip
+ * @param currentBatteryPercent Current battery level (%)
+ * @param tripDistanceKm Trip distance in kilometers
+ * @param terrainMultiplier Consumption multiplier (default: demo mode)
+ * @param minimumArrivalBattery Minimum battery required at destination (%)
  */
-export function needsCharging(currentBatteryPercent: number, tripDistanceKm: number): boolean {
-  const availableRange = calculateRemainingRange(currentBatteryPercent);
-  const requiredRange = tripDistanceKm * 1.1; // Add 10% safety margin
-
-  // Check if we have enough range plus minimum buffer at destination
-  const batteryUsed = calculateBatteryConsumption(tripDistanceKm);
+export function needsCharging(
+  currentBatteryPercent: number,
+  tripDistanceKm: number,
+  terrainMultiplier: number = CONSUMPTION_MULTIPLIERS.demo,
+  minimumArrivalBattery: number = MINIMUM_BATTERY_BUFFER
+): boolean {
+  // Calculate battery consumption using the specified multiplier
+  const batteryUsed = calculateBatteryConsumption(tripDistanceKm, terrainMultiplier);
   const batteryAtDestination = currentBatteryPercent - batteryUsed;
 
-  return availableRange < requiredRange || batteryAtDestination < MINIMUM_BATTERY_BUFFER;
+  // Check if we'll have enough battery at destination
+  return batteryAtDestination < minimumArrivalBattery;
 }
 
 /**
