@@ -559,10 +559,10 @@ function convertStationsToAppFormat(stations: any[]): Station[] {
   return stations.map(station => {
     const powerKW = station.powerKW || (station.isFastCharger ? 50 : 22);
     const isTeslaSupercharger = station.isTeslaSupercharger || false;
-    
+
     // Calculate dynamic pricing based on station power
     const pricePerKwh = getPricePerKwh(powerKW, isTeslaSupercharger);
-    
+
     return {
       id: station.id.toString(),
       name: station.name,

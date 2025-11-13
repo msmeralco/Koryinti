@@ -35,10 +35,10 @@ const STRATEGY_NAMES = {
 };
 
 export default function TripRouteScreen({ navigation, route }: Props) {
-  const { 
-    from, 
-    to, 
-    currentBatteryPercent = 80, 
+  const {
+    from,
+    to,
+    currentBatteryPercent = 80,
     minimumArrivalBattery = 25,
     chargingStrategy = 1,
     departureTime,
@@ -105,7 +105,8 @@ export default function TripRouteScreen({ navigation, route }: Props) {
               chargingStops: result.route.chargingStops.length,
               segments: result.route.segments.length,
               distance: result.route.totalDistance,
-              strategy: STRATEGY_NAMES[chargingStrategy as keyof typeof STRATEGY_NAMES] || 'Unknown',
+              strategy:
+                STRATEGY_NAMES[chargingStrategy as keyof typeof STRATEGY_NAMES] || 'Unknown',
             });
             if (result.route.chargingStops.length > 0) {
               console.warn('🔋 Charging stops:', result.route.chargingStops);
@@ -191,7 +192,7 @@ export default function TripRouteScreen({ navigation, route }: Props) {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top','left','right']}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <MapView
         style={styles.map}
         initialRegion={region}
@@ -246,7 +247,7 @@ export default function TripRouteScreen({ navigation, route }: Props) {
         />
       </MapView>
 
-  <View style={[styles.bottomSheet, isDetailsCollapsed && styles.bottomSheetCollapsed]}>
+      <View style={[styles.bottomSheet, isDetailsCollapsed && styles.bottomSheetCollapsed]}>
         {/* Toggle button */}
         <TouchableOpacity
           style={styles.toggleButton}
@@ -311,7 +312,12 @@ export default function TripRouteScreen({ navigation, route }: Props) {
                     Strategy: {STRATEGY_NAMES[chargingStrategy as keyof typeof STRATEGY_NAMES]}
                   </Text>
                   <Text style={styles.strategySubtext}>
-                    Optimized for {chargingStrategy === 0 ? 'fewer stops' : chargingStrategy === 1 ? 'balance' : 'faster charging'}
+                    Optimized for{' '}
+                    {chargingStrategy === 0
+                      ? 'fewer stops'
+                      : chargingStrategy === 1
+                        ? 'balance'
+                        : 'faster charging'}
                   </Text>
                 </View>
               )}
