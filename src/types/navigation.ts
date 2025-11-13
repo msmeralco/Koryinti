@@ -2,6 +2,7 @@ export type RootStackParamList = {
   Registration: undefined;
   AddVehicle: undefined;
   MainTabs: undefined;
+  AdminDashboard: undefined;
 };
 
 export type MainTabsParamList = {

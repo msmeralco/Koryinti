@@ -1,10 +1,11 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-
+import { useNavigation } from '@react-navigation/native';
 /**
  * ProfileScreen displays user information and app settings.
  * For MVP, this shows placeholder information without full user management.
  */
 export default function ProfileScreen() {
+  const navigation = useNavigation<any>();
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
@@ -51,7 +52,7 @@ export default function ProfileScreen() {
           <Text style={styles.menuText}>Help & Support</Text>
           <Text style={styles.menuArrow}>›</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('AdminDashboard')}>
           <Text style={styles.menuText}>Admin Dashboard</Text>
           <Text style={styles.menuArrow}>›</Text>
         </TouchableOpacity>
