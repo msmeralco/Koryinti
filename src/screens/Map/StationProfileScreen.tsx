@@ -1,6 +1,7 @@
+import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { MapStackParamList } from '@/types/navigation';
+import { MapStackParamList, EnrichedStation } from '@/types/navigation';
 
 type Props = NativeStackScreenProps<MapStackParamList, 'StationProfile'>;
 
@@ -12,50 +13,62 @@ type Props = NativeStackScreenProps<MapStackParamList, 'StationProfile'>;
  * - Plan a trip through this station
  */
 export default function StationProfileScreen({ navigation, route }: Props) {
-  const { stationId } = route.params;
+  const { station } = route.params;
 
   const handleReserve = () => {
-    navigation.navigate('ReserveStation', { stationId });
+    navigation.navigate('ReserveStation', { stationId: station.id });
   };
+
+  const isFull = station.availablePlugs <= 0;
+  const amenityList: { label: string; key: keyof EnrichedStation['amenities'] }[] = [
+    { label: 'WiFi', key: 'wifi' },
+    { label: 'Bathroom', key: 'bathroom' },
+    { label: 'PWD Friendly', key: 'pwdFriendly' },
+    { label: 'Waiting Lounge', key: 'waitingLounge' },
+  ];
 
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.stationName}>Downtown Charging Hub</Text>
-        <Text style={styles.rating}>⭐ 4.5 (120 reviews)</Text>
+        <Text style={styles.stationName}>{station.title}</Text>
+        <Text style={styles.rating}>⭐ {station.rating.toFixed(1)}</Text>
+        <Text style={styles.subHeader}>{station.address}</Text>
       </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Availability</Text>
-        <Text style={styles.availability}>3 of 6 chargers available</Text>
+        <Text style={[styles.availability, isFull && {color:'#d32f2f'}]}>{station.availablePlugs} of {station.totalPlugs} chargers available</Text>
+        <Text style={styles.text}>In use: {station.plugsInUse}</Text>
       </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Address</Text>
-        <Text style={styles.text}>123 Main Street</Text>
-        <Text style={styles.text}>Downtown, City 12345</Text>
+        <Text style={styles.text}>{station.address}</Text>
+        <Text style={styles.text}>{station.state}</Text>
+        <Text style={styles.text}>Distance: {station.distanceKm.toFixed(2)} km • {station.driveMinutes.toFixed(0)} min est. drive</Text>
       </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Pricing</Text>
-        <Text style={styles.text}>$0.35/kWh</Text>
+        <Text style={styles.text}>₱{station.pricePerKWh.toFixed(2)}/kWh (est.)</Text>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Charging Speed</Text>
-        <Text style={styles.text}>Level 3 DC Fast Charging (150kW)</Text>
+        <Text style={styles.sectionTitle}>Charging Power</Text>
+        <Text style={styles.text}>{station.powerKW.toFixed(0)} kW aggregate (est.)</Text>
+        <Text style={styles.text}>Plug Types: {station.plugTypes.join(', ') || 'Unknown'}</Text>
       </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Amenities</Text>
-        <Text style={styles.text}>• Restrooms</Text>
-        <Text style={styles.text}>• WiFi</Text>
-        <Text style={styles.text}>• Coffee Shop Nearby</Text>
+        {amenityList.map(a => (
+          <Text key={a.key} style={styles.text}>• {a.label}: {station.amenities[a.key] ? 'Yes' : 'No'}</Text>
+        ))}
       </View>
 
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.primaryButton} onPress={handleReserve}>
-          <Text style={styles.buttonText}>Reserve</Text>
+        <TouchableOpacity style={[styles.primaryButton, isFull && {backgroundColor:'#9e9e9e'}]} disabled={isFull} onPress={handleReserve}>
+          <Text style={styles.buttonText}>{isFull ? 'Full / Unavailable' : 'Reserve'}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.secondaryButton}>
@@ -92,6 +105,11 @@ const styles = StyleSheet.create({
   rating: {
     fontSize: 16,
     color: '#666',
+  },
+  subHeader: {
+    fontSize: 14,
+    color: '#888',
+    marginTop: 4,
   },
   section: {
     padding: 20,
