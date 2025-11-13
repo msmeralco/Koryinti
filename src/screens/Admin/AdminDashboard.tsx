@@ -3,10 +3,11 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { LineChart, BarChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
+// ...existing code...
 
 const screenWidth = Dimensions.get('window').width;
 
-// Philippine regions
+// Philippine regions (18)
 const REGIONS = [
   'Region I – Ilocos',
   'Region II – Cagayan Valley',
@@ -27,6 +28,9 @@ const REGIONS = [
   'BARMM – Bangsamoro',
   'NIR – Negros Island',
 ];
+
+// Picker options: include an overall aggregate option first
+const SELECT_OPTIONS = ['All Regions – Overall', ...REGIONS];
 
 // Sample consumption data per region (kWh)
 const CONSUMPTION_DATA: Record<string, { months: number[]; label: string }> = {
@@ -51,10 +55,7 @@ const CONSUMPTION_DATA: Record<string, { months: number[]; label: string }> = {
 };
 
 export default function AdminDashboard() {
-  const [selectedRegion, setSelectedRegion] = useState('Region I – Ilocos');
-
-  const currentRegionData = CONSUMPTION_DATA[selectedRegion];
-  const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+  const [selectedRegion, setSelectedRegion] = useState(SELECT_OPTIONS[0]); // default to Overall
 
   // helper: produce short x-axis label (roman or acronym)
   const shortRegionLabel = (r: string) => {
@@ -63,15 +64,31 @@ export default function AdminDashboard() {
     if (/^Region\b/i.test(left)) {
       return left.replace(/^Region\s*/i, '').trim(); // "I", "II", "IV-A", "XII", etc.
     }
-    return left; // "NCR", "CAR", "MIMAROPA", "BARMM", "NIR"
+    return left; // "NCR", "CAR", "MIMAROPA", "BARMM", "NIR", or "All Regions"
   };
 
-  // Time series data for selected region
+  // returns months array for a region or aggregated across all regions
+  const getRegionMonths = (region: string) => {
+    if (region === 'All Regions – Overall') {
+      const values = Object.values(CONSUMPTION_DATA);
+      if (values.length === 0) return [];
+      const monthsCount = values[0].months.length;
+      return Array.from({ length: monthsCount }, (_, i) =>
+        values.reduce((sum, v) => sum + (v.months[i] ?? 0), 0)
+      );
+    }
+    return CONSUMPTION_DATA[region]?.months ?? [];
+  };
+
+  const currentRegionMonths = getRegionMonths(selectedRegion);
+  const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+
+  // Time series data for selected region (or overall)
   const timeSeriesData = {
     labels: monthLabels,
     datasets: [
       {
-        data: currentRegionData.months,
+        data: currentRegionMonths,
         strokeWidth: 2,
         color: () => '#4CAF50',
       },
@@ -106,9 +123,9 @@ export default function AdminDashboard() {
             onValueChange={(itemValue) => setSelectedRegion(itemValue)}
             style={styles.picker}
             itemStyle={styles.pickerItem}
-            mode='dropdown'
+            mode="dropdown"
           >
-            {REGIONS.map((region) => (
+            {SELECT_OPTIONS.map((region) => (
               <Picker.Item
                 key={region}
                 label={region.split('–')[1]?.trim() || region}
@@ -122,7 +139,7 @@ export default function AdminDashboard() {
       {/* Time Series Chart */}
       <View style={styles.sectionContainer}>
         <Text style={styles.sectionTitle}>
-          Electric Consumption - {CONSUMPTION_DATA[selectedRegion].label} (kWh)
+          Electric Consumption - {selectedRegion === 'All Regions – Overall' ? 'Overall' : CONSUMPTION_DATA[selectedRegion].label} (kWh)
         </Text>
         <LineChart
           data={timeSeriesData}
@@ -189,9 +206,10 @@ const styles = StyleSheet.create({
   picker: {
     height: 60,
     backgroundColor: '#fff',
-    paddingVertical:6,
+    paddingVertical: 6,
   },
   pickerItem: { height: 60, fontSize: 16 },
   chart: { marginVertical: 10, borderRadius: 8 },
   footer: { fontSize: 14, color: '#999', marginTop: 20, marginBottom: 30, textAlign: 'center' },
 });
+// ...existing code...
