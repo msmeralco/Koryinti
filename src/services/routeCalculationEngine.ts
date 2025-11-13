@@ -20,10 +20,7 @@ import {
   PRICING,
   CONSUMPTION_MULTIPLIERS,
 } from './standardVehicleModel';
-import {
-  optimizeRoute,
-  StrategyType,
-} from './chargingOptimizer';
+import { optimizeRoute, StrategyType } from './chargingOptimizer';
 import {
   DetailedRoute,
   RouteSegment,
