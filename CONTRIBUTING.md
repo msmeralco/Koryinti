@@ -60,21 +60,26 @@ Thank you for your interest in contributing to Revolt! This document provides gu
 
 ```markdown
 ## Description
+
 Brief description of changes
 
 ## Type of Change
+
 - [ ] Bug fix
 - [ ] New feature
 - [ ] Breaking change
 - [ ] Documentation update
 
 ## Testing
+
 How was this tested?
 
 ## Screenshots (if applicable)
+
 Add screenshots for UI changes
 
 ## Checklist
+
 - [ ] Code follows style guidelines
 - [ ] Self-review completed
 - [ ] Commented complex code
@@ -105,6 +110,7 @@ Follow Conventional Commits specification:
 ```
 
 **Types:**
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation
@@ -114,6 +120,7 @@ Follow Conventional Commits specification:
 - `chore`: Maintenance
 
 **Examples:**
+
 ```
 feat(map): add real-time station availability
 
@@ -190,6 +197,7 @@ Fixes #456
 ## Recognition
 
 Contributors will be recognized in:
+
 - GitHub contributors list
 - Release notes
 - Project documentation
