@@ -68,7 +68,7 @@ export default function MapHomeScreen({ navigation }: Props) {
         const maxLng = Math.max(topLeftLng, bottomRightLng);
 
         // Use comma-separated values (no brackets) to avoid encoding issues
-        const url = `https://api.openchargemap.io/v3/poi?key=${OPENCHARGEMAP_API_KEY}&boundingbox=(${minLat},${minLng}),(${maxLat},${maxLng})&maxresults=500`;
+        const url = `https://api.openchargemap.io/v3/poi?key=${OPENCHARGEMAP_API_KEY}&boundingbox=${minLat},${minLng},${maxLat},${maxLng}&maxresults=500`;
 
         const resp = await fetch(url);
         if (!resp.ok) throw new Error(`OpenChargeMap request failed: ${resp.status}`);
