@@ -1,97 +1,111 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+
 /**
  * ProfileScreen displays user information and app settings.
  * For MVP, this shows placeholder information without full user management.
  */
 export default function ProfileScreen() {
   const navigation = useNavigation<any>();
+
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}
-    >
-      {/* HEADER */}
-      <View style={styles.header}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>JD</Text>
-        </View>
-        <Text style={styles.name}>John Doe</Text>
-        <Text style={styles.email}>john.doe@example.com</Text>
-      </View>
-
-      {/* VEHICLES */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>My Vehicles</Text>
-        <View style={styles.vehicleCard}>
-          <View>
-            <Text style={styles.vehicleName}>Tesla Model 3</Text>
-            <Text style={styles.vehicleDetails}>2023 • Long Range</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* HEADER */}
+        <View style={styles.header}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>JD</Text>
           </View>
-          <View style={styles.defaultBadgePill}>
-            <Text style={styles.defaultBadgeText}>Primary</Text>
-          </View>
+          <Text style={styles.name}>John Doe</Text>
+          <Text style={styles.email}>john.doe@example.com</Text>
         </View>
-        <TouchableOpacity style={styles.addButton}>
-          <Text style={styles.addButtonText}>+ Add Vehicle</Text>
-        </TouchableOpacity>
-      </View>
 
-      {/* PAYMENT METHODS */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Payment Methods</Text>
-        <View style={styles.paymentCard}>
-          <Text style={styles.paymentText}>💳 •••• 4242</Text>
-          <View style={styles.defaultBadgePill}>
-            <Text style={styles.defaultBadgeText}>Default</Text>
+        {/* VEHICLES */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>My Vehicles</Text>
+          <View style={styles.vehicleCard}>
+            <View>
+              <Text style={styles.vehicleName}>Tesla Model 3</Text>
+              <Text style={styles.vehicleDetails}>2023 • Long Range</Text>
+            </View>
+            <View style={styles.defaultBadgePill}>
+              <Text style={styles.defaultBadgeText}>Primary</Text>
+            </View>
           </View>
+          <TouchableOpacity style={styles.addButton}>
+            <Text style={styles.addButtonText}>+ Add Vehicle</Text>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.addButton}>
-          <Text style={styles.addButtonText}>+ Add Payment Method</Text>
-        </TouchableOpacity>
-      </View>
 
-      {/* SETTINGS */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Settings</Text>
-        <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuText}>Notifications</Text>
-          <Text style={styles.menuArrow}>›</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuText}>Privacy</Text>
-          <Text style={styles.menuArrow}>›</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuText}>Help & Support</Text>
-          <Text style={styles.menuArrow}>›</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('AdminDashboard')}>
-          <Text style={styles.menuText}>Admin Dashboard</Text>
-          <Text style={styles.menuArrow}>›</Text>
-        </TouchableOpacity>
-      </View>
+        {/* PAYMENT METHODS */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Payment Methods</Text>
+          <View style={styles.paymentCard}>
+            <Text style={styles.paymentText}>💳 •••• 4242</Text>
+            <View style={styles.defaultBadgePill}>
+              <Text style={styles.defaultBadgeText}>Default</Text>
+            </View>
+          </View>
+          <TouchableOpacity style={styles.addButton}>
+            <Text style={styles.addButtonText}>+ Add Payment Method</Text>
+          </TouchableOpacity>
+        </View>
 
-      {/* LOGOUT */}
-      <TouchableOpacity style={styles.logoutButton}>
-        <Text style={styles.logoutText}>Log Out</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        {/* SETTINGS */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Settings</Text>
+          <TouchableOpacity style={styles.menuItem}>
+            <Text style={styles.menuText}>Notifications</Text>
+            <Text style={styles.menuArrow}>›</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem}>
+            <Text style={styles.menuText}>Privacy</Text>
+            <Text style={styles.menuArrow}>›</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem}>
+            <Text style={styles.menuText}>Help & Support</Text>
+            <Text style={styles.menuArrow}>›</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('AdminDashboard')}
+          >
+            <Text style={styles.menuText}>Admin Dashboard</Text>
+            <Text style={styles.menuArrow}>›</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* LOGOUT */}
+        <TouchableOpacity style={styles.logoutButton}>
+          <Text style={styles.logoutText}>Log Out</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const GREEN = '#00F470';
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#020617', // match main background so notch area is consistent
+  },
   container: {
     flex: 1,
     backgroundColor: '#020617', // deep dark to match app
   },
   contentContainer: {
+    paddingTop: 12,   // similar top spacing as AdminDashboard content
     paddingBottom: 32,
   },
   header: {
-    paddingTop: 40,
+    paddingTop: 24,
     paddingBottom: 24,
     paddingHorizontal: 20,
     alignItems: 'center',
@@ -161,7 +175,6 @@ const styles = StyleSheet.create({
   },
   paymentCard: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     padding: 14,
     backgroundColor: '#020617',
