@@ -25,6 +25,7 @@ export default function TripRouteScreen({ navigation, route }: Props) {
   const [detailedRoute, setDetailedRoute] = useState<DetailedRoute | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDetailsCollapsed, setIsDetailsCollapsed] = useState(false);
 
   const truncateLocation = (value: string) => {
     if (!value) return '';
@@ -281,6 +282,7 @@ export default function TripRouteScreen({ navigation, route }: Props) {
                   <Text style={styles.costValue}>
                     ₱{detailedRoute.costBreakdown.chargingCost.toFixed(2)}
                   </Text>
+                  <Text style={styles.statLabel}>Total Time</Text>
                 </View>
                 <View style={styles.costRow}>
                   <Text style={styles.costLabel}>Booking fee (2%)</Text>
@@ -324,8 +326,19 @@ export default function TripRouteScreen({ navigation, route }: Props) {
             </View>
           )}
 
-          <View style={styles.bottomPadding} />
-        </ScrollView>
+              {detailedRoute.chargingStops.length === 0 && (
+                <View style={styles.noChargingNeeded}>
+                  <Text style={styles.noChargingText}>✅ No charging needed!</Text>
+                  <Text style={styles.noChargingSubtext}>
+                    Your battery is sufficient for this trip
+                  </Text>
+                </View>
+              )}
+
+              <View style={styles.bottomPadding} />
+            </ScrollView>
+          </>
+        )}
       </View>
     </View>
   );
@@ -486,6 +499,24 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 12,
     elevation: 18,
+  },
+  bottomSheetCollapsed: {
+    maxHeight: 60,
+    paddingTop: 5,
+  },
+  toggleButton: {
+    alignSelf: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 20,
+    marginTop: 5,
+    marginBottom: 5,
+  },
+  toggleButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#4CAF50',
   },
   handle: {
     width: 50,

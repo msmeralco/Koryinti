@@ -41,6 +41,7 @@ export default function PlanTripScreen({ navigation }: Props) {
   const [activeField, setActiveField] = useState<'from' | 'to' | null>(null);
   const [gettingLocation, setGettingLocation] = useState(false);
   const [nearbyStations, setNearbyStations] = useState<Station[]>([]);
+  const [isFormCollapsed, setIsFormCollapsed] = useState(false);
 
   // Map region - will update to user's location
   const [region, setRegion] = useState({
@@ -259,9 +260,32 @@ export default function PlanTripScreen({ navigation }: Props) {
                     )}
                     style={styles.suggestionsList}
                   />
+                  {searchingTo && (
+                    <View style={styles.loadingContainer}>
+                      <ActivityIndicator size="small" color="#4CAF50" />
+                    </View>
+                  )}
+                  {toSuggestions.length > 0 && activeField === 'to' && (
+                    <View style={styles.suggestionsContainer}>
+                      <FlatList
+                        data={toSuggestions}
+                        keyExtractor={item => item.place_id.toString()}
+                        keyboardShouldPersistTaps="handled"
+                        renderItem={({ item }) => (
+                          <TouchableOpacity
+                            style={styles.suggestionItem}
+                            onPress={() => selectToSuggestion(item)}
+                          >
+                            <Text style={styles.suggestionText}>
+                              📍 {formatDisplayName(item.display_name)}
+                            </Text>
+                          </TouchableOpacity>
+                        )}
+                        style={styles.suggestionsList}
+                      />
+                    </View>
+                  )}
                 </View>
-              )}
-            </View>
 
             {/* TO */}
             <View style={styles.inputWrapper}>
@@ -316,9 +340,10 @@ export default function PlanTripScreen({ navigation }: Props) {
                     )}
                     style={styles.suggestionsList}
                   />
+                  <Text style={styles.batteryHint}>
+                    Charging stations will be recommended if needed to reach this level
+                  </Text>
                 </View>
-              )}
-            </View>
 
             {/* Battery Level Input */}
             <View style={styles.batteryRow}>
@@ -423,6 +448,23 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 18,
+  },
+  inputContainerCollapsed: {
+    padding: 10,
+    paddingBottom: 20,
+  },
+  toggleButton: {
+    alignSelf: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 20,
+    marginBottom: 10,
+  },
+  toggleButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#4CAF50',
   },
   title: {
     fontSize: 20,
