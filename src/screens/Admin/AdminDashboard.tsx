@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import { LineChart, BarChart } from 'react-native-chart-kit';
+import { LineChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
-// ...existing code...
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -31,43 +30,45 @@ const REGIONS = [
 
 // Picker options: include an overall aggregate option first
 const SELECT_OPTIONS = ['All Regions – Overall', ...REGIONS];
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+const MONTH_SELECT_OPTIONS = [...MONTHS, 'Total'];
 
 // Sample consumption data per region (kWh)
 const CONSUMPTION_DATA: Record<string, { months: number[]; label: string }> = {
-  'Region I – Ilocos': { months: [120, 145, 160, 175, 190, 210], label: 'Region I' },
-  'Region II – Cagayan Valley': { months: [110, 130, 150, 165, 180, 200], label: 'Region II' },
-  'Region III – Central Luzon': { months: [100, 125, 140, 155, 170, 190], label: 'Region III' },
-  'Region IV-A – CALABARZON': { months: [95, 115, 135, 150, 165, 185], label: 'Region IV-A' },
-  'MIMAROPA': { months: [130, 155, 175, 190, 210, 235], label: 'MIMAROPA' },
-  'Region V – Bicol': { months: [140, 165, 185, 205, 225, 250], label: 'Region V' },
-  'Region VI – Western Visayas': { months: [105, 125, 145, 160, 175, 195], label: 'Region VI' },
-  'Region VII – Central Visayas': { months: [115, 135, 155, 170, 185, 205], label: 'Region VII' },
-  'Region VIII – Eastern Visayas': { months: [150, 175, 200, 220, 240, 265], label: 'Region VIII' },
-  'Region IX – Zamboanga': { months: [160, 185, 210, 235, 255, 280], label: 'Region IX' },
-  'Region X – Northern Mindanao': { months: [125, 150, 170, 190, 210, 235], label: 'Region X' },
-  'Region XI – Davao': { months: [135, 160, 180, 200, 220, 245], label: 'Region XI' },
-  'Region XII – SOCCSKSARGEN': { months: [90, 110, 130, 145, 160, 180], label: 'Region XII' },
-  'Region XIII – Caraga': { months: [85, 105, 125, 140, 155, 175], label: 'Region XIII' },
-  'NCR – National Capital': { months: [75, 95, 115, 130, 145, 165], label: 'NCR' },
-  'CAR – Cordillera': { months: [110, 135, 155, 175, 195, 220], label: 'CAR' },
-  'BARMM – Bangsamoro': { months: [100, 120, 140, 155, 170, 190], label: 'BARMM' },
-  'NIR – Negros Island': { months: [70, 90, 110, 125, 140, 160], label: 'NIR' },
+  'NCR – National Capital':      { months: [400, 450, 550, 650, 620, 580],  label: 'NCR' },
+  'Region IV-A – CALABARZON':    { months: [200, 220, 280, 330, 320, 290],  label: 'Region IV-A' },
+  'Region III – Central Luzon':  { months: [160, 180, 220, 250, 240, 210],  label: 'Region III' },
+  'Region XI – Davao':           { months: [100, 115, 130, 145, 155, 140],  label: 'Region XI' },
+  'Region VII – Central Visayas':{ months: [90, 100, 115, 130, 140, 125],   label: 'Region VII' },
+  'CAR – Cordillera':            { months: [90, 95, 110, 120, 115, 105],   label: 'CAR' },
+  'Region X – Northern Mindanao':{ months: [60, 70, 80, 90, 95, 85],     label: 'Region X' },
+  'Region VI – Western Visayas': { months: [55, 65, 75, 85, 80, 70],     label: 'Region VI' },
+  'Region I – Ilocos':           { months: [45, 50, 60, 65, 60, 55],     label: 'Region I' },
+  'NIR – Negros Island':         { months: [40, 45, 50, 55, 50, 45],     label: 'NIR' },
+  'Region II – Cagayan Valley':  { months: [35, 40, 45, 50, 45, 40],     label: 'Region II' },
+  'MIMAROPA':                    { months: [30, 35, 40, 50, 50, 45],     label: 'MIMAROPA' },
+  'Region V – Bicol':            { months: [25, 30, 35, 40, 35, 30],     label: 'Region V' },
+  'Region VIII – Eastern Visayas':{ months: [20, 25, 30, 35, 30, 25],     label: 'Region VIII' },
+  'Region IX – Zamboanga':       { months: [15, 20, 25, 30, 25, 20],     label: 'Region IX' },
+  'Region XII – SOCCSKSARGEN':   { months: [10, 15, 20, 25, 20, 15],     label: 'Region XII' },
+  'Region XIII – Caraga':        { months: [10, 15, 20, 25, 20, 15],     label: 'Region XIII' },
+  'BARMM – Bangsamoro':          { months: [5, 10, 15, 20, 15, 10],      label: 'BARMM' },
 };
 
 export default function AdminDashboard() {
   const [selectedRegion, setSelectedRegion] = useState(SELECT_OPTIONS[0]); // default to Overall
+  const [selectedMonth, setSelectedMonth] = useState(MONTH_SELECT_OPTIONS[MONTH_SELECT_OPTIONS.length - 1]);
+  const [sortDescending, setSortDescending] = useState(false);
 
-  // helper: produce short x-axis label (roman or acronym)
   const shortRegionLabel = (r: string) => {
     const parts = r.split('–').map((p) => p.trim());
-    const left = parts[0]; // e.g. "Region I" or "NCR" or "MIMAROPA"
+    const left = parts[0];
     if (/^Region\b/i.test(left)) {
-      return left.replace(/^Region\s*/i, '').trim(); // "I", "II", "IV-A", "XII", etc.
+      return left.replace(/^Region\s*/i, '').trim();
     }
-    return left; // "NCR", "CAR", "MIMAROPA", "BARMM", "NIR", or "All Regions"
+    return left;
   };
 
-  // returns months array for a region or aggregated across all regions
   const getRegionMonths = (region: string) => {
     if (region === 'All Regions – Overall') {
       const values = Object.values(CONSUMPTION_DATA);
@@ -83,7 +84,6 @@ export default function AdminDashboard() {
   const currentRegionMonths = getRegionMonths(selectedRegion);
   const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
 
-  // Time series data for selected region (or overall)
   const timeSeriesData = {
     labels: monthLabels,
     datasets: [
@@ -95,19 +95,33 @@ export default function AdminDashboard() {
     ],
   };
 
-  // Bar chart: all 18 regions consumption for June (defensive access)
-  const barChartData = {
-    labels: REGIONS.map((r) => shortRegionLabel(r)),
-    datasets: [
-      {
-        data: REGIONS.map((r) => CONSUMPTION_DATA[r]?.months?.[5] ?? 0),
-      },
-    ],
-  };
+  const monthIndex = MONTHS.indexOf(selectedMonth);
+  const barValues = REGIONS.map((r) => {
+    const months = CONSUMPTION_DATA[r]?.months ?? [];
+    if (selectedMonth === 'Total') {
+      return months.reduce((s, v) => s + (v ?? 0), 0);
+    }
+    return months[monthIndex] ?? 0;
+  });
 
-  // compute chart width so bars have breathing room: allocate ~60px per region
+  const grandTotal = barValues.reduce((s, v) => s + v, 0);
+
+  // per-bar allocation and chart width capped to screen width (100% of screen)
   const perBarWidth = 60;
-  const chartWidth = Math.max(screenWidth - 40, REGIONS.length * perBarWidth);
+  const chartWidth = Math.min(REGIONS.length * perBarWidth, screenWidth - 40);
+
+  // NCR total baseline (always total across months) — used as 100%
+  const ncrKey = REGIONS.find(r => r.startsWith('NCR')) ?? 'NCR – National Capital';
+  const ncrMonths = CONSUMPTION_DATA[ncrKey]?.months ?? [];
+  const ncrTotalBaseline = ncrMonths.length ? ncrMonths.reduce((s, v) => s + v, 0) : Math.max(...barValues, 1);
+
+  // displayed order (original or sorted by current barValues desc)
+  const displayedRegions = useMemo(() => {
+    if (!sortDescending) return REGIONS;
+    const pairs = REGIONS.map((r, idx) => ({ region: r, value: barValues[idx] ?? 0 }));
+    pairs.sort((a, b) => b.value - a.value);
+    return pairs.map(p => p.region);
+  }, [barValues, sortDescending]);
 
   return (
     <ScrollView style={styles.container}>
@@ -124,6 +138,7 @@ export default function AdminDashboard() {
             style={styles.picker}
             itemStyle={styles.pickerItem}
             mode="dropdown"
+            dropdownIconColor="#ffffff"
           >
             {SELECT_OPTIONS.map((region) => (
               <Picker.Item
@@ -139,77 +154,218 @@ export default function AdminDashboard() {
       {/* Time Series Chart */}
       <View style={styles.sectionContainer}>
         <Text style={styles.sectionTitle}>
-          Electric Consumption - {selectedRegion === 'All Regions – Overall' ? 'Overall' : CONSUMPTION_DATA[selectedRegion].label} (kWh)
+          Electric Consumption - {selectedRegion === 'All Regions – Overall' ? 'Overall' : CONSUMPTION_DATA[selectedRegion]?.label || selectedRegion} (kWh)
         </Text>
-        <LineChart
-          data={timeSeriesData}
-          width={screenWidth - 40}
-          height={250}
-          chartConfig={{
-            backgroundColor: '#fff',
-            backgroundGradientFrom: '#fff',
-            backgroundGradientTo: '#fff',
-            color: (opacity = 1) => `rgba(76,175,80, ${opacity})`,
-            strokeWidth: 2,
-            useShadowColorFromDataset: false,
-            decimalPlaces: 0,
-          }}
-          bezier
-          style={styles.chart}
-        />
-      </View>
-
-      {/* Bar Chart - All Regions June */}
-      <View style={styles.sectionContainer}>
-        <Text style={styles.sectionTitle}>June Consumption by Region (kWh)</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator>
-          <BarChart
-            data={barChartData}
-            width={chartWidth}
-            height={280}
-            yAxisLabel=""
-            yAxisSuffix=" kWh"
-            fromZero
-            showValuesOnTopOfBars
-            verticalLabelRotation={0}
+          <LineChart
+            data={timeSeriesData}
+            width={Math.max(screenWidth - 48, chartWidth)}
+            height={240}
             chartConfig={{
-              backgroundColor: '#fff',
-              backgroundGradientFrom: '#fff',
-              backgroundGradientTo: '#fff',
-              color: (opacity = 1) => `rgba(33,150,243, ${opacity})`,
+              backgroundColor: '#2c3035',
+              backgroundGradientFrom: '#2c3035',
+              backgroundGradientTo: '#1f2321',
+              color: (opacity = 1) => `rgba(70,249,140, ${opacity})`,
               strokeWidth: 2,
               useShadowColorFromDataset: false,
               decimalPlaces: 0,
+              labelColor: (opacity = 1) => `rgba(255,255,255, ${opacity * 0.85})`,
             }}
+            bezier
             style={styles.chart}
           />
         </ScrollView>
       </View>
 
-      <Text style={styles.footer}>Git Gud.</Text>
+      {/* Month Selector Dropdown */}
+      <View style={styles.sectionContainer}>
+        <Text style={styles.sectionTitle}>Filter Bar Chart by Month</Text>
+        <View style={styles.pickerContainer}>
+          <Picker
+            selectedValue={selectedMonth}
+            onValueChange={(itemValue) => setSelectedMonth(itemValue)}
+            style={styles.picker}
+            itemStyle={styles.pickerItem}
+            mode="dropdown"
+            dropdownIconColor="#ffffff"
+          >
+            {MONTH_SELECT_OPTIONS.map((m) => (
+              <Picker.Item key={m} label={m} value={m} />
+            ))}
+          </Picker>
+        </View>
+
+        {/* Sort button */}
+        <View style={{ marginTop: 12, alignItems: 'flex-end' }}>
+          <TouchableOpacity
+            onPress={() => setSortDescending(s => !s)}
+            style={[styles.sortButton, sortDescending ? styles.sortButtonActive : null]}
+          >
+            <Text style={styles.sortButtonText}>{sortDescending ? 'Sorted: High → Low' : 'Sort High → Low'}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Bar Chart - All Regions (horizontal bars) */}
+      <ScrollView horizontal showsHorizontalScrollIndicator>
+        <View style={{ width: chartWidth }}>
+          
+          
+
+          {/* bars */}
+          <View style={{ paddingVertical: 6 }}>
+            {(() => {
+              const labelWidth = 56;
+              const valueWidth = 72;
+              const baseAvailable = Math.max(80, chartWidth - labelWidth - valueWidth - 32);
+              const available = Math.round(baseAvailable * 0.85);
+              const minVisiblePx = 2;
+
+              return displayedRegions.map((r) => {
+                const idx = REGIONS.indexOf(r);
+                const val = barValues[idx] ?? 0;
+                // ratio relative to NCR TOTAL baseline (not month-specific)
+                const ratio = ncrTotalBaseline > 0 ? Math.min(val / ncrTotalBaseline, 1) : 0;
+                const fillWidthRaw = Math.round(ratio * available);
+                const fillWidth = val > 0 ? Math.max(fillWidthRaw, minVisiblePx) : 0;
+
+                // position the absolute value label near end of fill (inside if possible)
+                const overlayLeft = fillWidth > 48
+                  ? Math.min(Math.max(fillWidth - 48, 6), available - 64)
+                  : Math.min(fillWidth + 6, available - 64);
+
+                return (
+                  <View key={r} style={styles.barRow}>
+                    <Text style={styles.barLabel}>{shortRegionLabel(r)}</Text>
+
+                    <View style={[styles.barTrack, { width: available }]}>
+                      <View style={[styles.barFill, { width: fillWidth }]} />
+                      <Text
+                        style={[
+                          styles.barValueOverlay,
+                          { left: overlayLeft },
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {val.toLocaleString()}
+                      </Text>
+                    </View>
+
+                    {/* numeric fallback / right-side value (subtle) */}
+                    <Text style={styles.barValue}>{val.toLocaleString()}</Text>
+                  </View>
+                );
+              });
+            })()}
+          </View>
+
+          {/* lower axis (ticks & labels) */}
+          <View style={styles.axisContainer}>
+            <Text style={styles.axisLabel}>0</Text>
+            <Text style={styles.axisLabel}>{Math.round(ncrTotalBaseline / 2).toLocaleString()}</Text>
+            <Text style={styles.axisLabel}>{Math.round(ncrTotalBaseline).toLocaleString()}</Text>
+          </View>
+        </View>
+      </ScrollView>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5', padding: 20 },
-  title: { fontSize: 26, fontWeight: '700', marginBottom: 5, color: '#333' },
-  subtitle: { fontSize: 14, color: '#666', marginBottom: 20 },
-  sectionContainer: { marginBottom: 30, backgroundColor: '#fff', padding: 15, borderRadius: 8 },
-  sectionTitle: { fontSize: 16, fontWeight: '600', marginBottom: 15, color: '#333' },
+  container: { flex: 1, backgroundColor: '#111312', padding: 20 },
+  title: { fontSize: 26, fontWeight: '700', marginBottom: 5, color: '#ffffff' },
+  subtitle: { fontSize: 14, color: '#ffffff', marginBottom: 20 },
+  sectionContainer: { marginBottom: 30, backgroundColor: '#1f2321', padding: 15, borderRadius: 8 },
+  sectionTitle: { fontSize: 16, fontWeight: '600', marginBottom: 15, color: '#ffffff' },
+  smallText: { fontSize: 12, color: '#ffffff', marginBottom: 8 },
   pickerContainer: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#ffffff22',
     borderRadius: 6,
     overflow: 'hidden',
+    backgroundColor: '#111312',
+    color: '#ffffff'
   },
   picker: {
     height: 60,
-    backgroundColor: '#fff',
+    backgroundColor: '#1f2321',
     paddingVertical: 6,
+    color: '#ffffff',
   },
-  pickerItem: { height: 60, fontSize: 16 },
-  chart: { marginVertical: 10, borderRadius: 8 },
-  footer: { fontSize: 14, color: '#999', marginTop: 20, marginBottom: 30, textAlign: 'center' },
+  pickerItem: { height: 60, fontSize: 16, color: '#ffffff' },
+  chart: { marginVertical: 10, borderRadius: 8, backgroundColor: '#2c3035' },
+  footer: { fontSize: 14, color: '#ffffff', marginTop: 20, marginBottom: 30, textAlign: 'center' },
+
+  /* sort button */
+  sortButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    backgroundColor: '#2a2d2f',
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  sortButtonActive: {
+    backgroundColor: '#46f98c22',
+    borderColor: '#46f98c',
+  },
+  sortButtonText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+
+  /* horizontal bar chart styles */
+  barRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+  },
+  barLabel: {
+    width: 56,
+    color: '#ffffff',
+    fontSize: 12,
+    textAlign: 'left',
+    marginRight: 8,
+  },
+  barTrack: {
+    height: 18,
+    backgroundColor: '#222428',
+    borderRadius: 9,
+    overflow: 'hidden',
+    marginRight: 8,
+    position: 'relative',
+  },
+  barFill: {
+    height: 18,
+    backgroundColor: '#46f98c',
+    borderRadius: 9,
+  },
+  barValue: {
+    width: 72,
+    textAlign: 'right',
+    color: '#ffffff',
+    fontSize: 12,
+  },
+  /* overlay label shown near end of bar fill (absolute value) */
+  barValueOverlay: {
+    position: 'absolute',
+    top: -2,
+    color: '#111312',
+    fontSize: 12,
+    fontWeight: '700',
+    backgroundColor: 'transparent',
+    display:'none',
+  },
+  axisContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
+    marginTop: 6,
+  },
+  axisLabel: {
+    color: '#B0B0B0',
+    fontSize: 11,
+  },
 });
-// ...existing code...
