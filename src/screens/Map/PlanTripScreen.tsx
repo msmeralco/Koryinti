@@ -1,4 +1,17 @@
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, ActivityIndicator, Keyboard, Alert, KeyboardAvoidingView, Platform, TouchableWithoutFeedback } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  FlatList,
+  ActivityIndicator,
+  Keyboard,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MapStackParamList } from '@/types/navigation';
@@ -307,7 +320,7 @@ export default function PlanTripScreen({ navigation }: Props) {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <SafeAreaView style={styles.container} edges={['top','left','right']}>
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <MapView
           style={styles.map}
           initialRegion={region}
