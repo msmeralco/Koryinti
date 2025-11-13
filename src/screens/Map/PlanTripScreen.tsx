@@ -11,7 +11,7 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MapStackParamList } from '@/types/navigation';
 import { useState, useEffect } from 'react';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps'; /** this is the map part */
 import { searchPlaces, formatDisplayName, GeocodingResult } from '@/services/geocodingService';
 
 type Props = NativeStackScreenProps<MapStackParamList, 'PlanTrip'>;
