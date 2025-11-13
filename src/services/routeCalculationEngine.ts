@@ -12,6 +12,8 @@ import {
   needsCharging,
   calculateChargingTime,
   calculateChargingCost,
+  getPricePerKwh,
+  getChargingSpeedCategory,
   MINIMUM_BATTERY_BUFFER,
   CHARGING_ARRIVAL_MIN,
   CHARGING_TARGET_PERCENT,
@@ -280,14 +282,46 @@ function planRouteSegments(
       });
 
       // Charging stop
+      // Cap station power to vehicle's maximum charging capability
+      const rawStationPower = optimalStation.powerKW || vehicle.fastChargingPower;
+      const stationPowerKW = Math.min(rawStationPower, vehicle.maxChargingPower);
+
       const chargingDuration = calculateChargingTime(
         batteryAtStation,
         CHARGING_TARGET_PERCENT,
-        optimalStation.powerKW || vehicle.fastChargingPower
+        stationPowerKW
       );
       const energyCharged =
         ((CHARGING_TARGET_PERCENT - batteryAtStation) / 100) * vehicle.batteryCapacity;
-      const chargingCost = calculateChargingCost(energyCharged, optimalStation.pricePerKwh);
+
+      // Calculate dynamic pricing based on charging speed and station type
+      const dynamicPricePerKwh = getPricePerKwh(
+        stationPowerKW,
+        optimalStation.isTeslaSupercharger || false,
+        optimalStation.pricePerKwh
+      );
+
+      // Calculate total charging cost (includes connection fee)
+      const chargingCost = calculateChargingCost(energyCharged, dynamicPricePerKwh, true);
+
+      // Update station price for display
+      optimalStation.pricePerKwh = dynamicPricePerKwh;
+
+      // Determine charging speed category for display
+      const speedCategory = getChargingSpeedCategory(stationPowerKW);
+      optimalStation.chargingSpeed = speedCategory;
+
+      // Debug logging for pricing
+      console.warn('💰 Charging Cost Breakdown:', {
+        stationPower: `${stationPowerKW} kW`,
+        speedCategory,
+        pricePerKwh: `₱${dynamicPricePerKwh}/kWh`,
+        energyCharged: `${energyCharged.toFixed(2)} kWh`,
+        energyCost: `₱${(energyCharged * dynamicPricePerKwh).toFixed(2)}`,
+        connectionFee: `₱${PRICING.connectionFee}`,
+        totalChargingCost: `₱${chargingCost.toFixed(2)}`,
+        chargingTime: `${chargingDuration} minutes`,
+      });
 
       cumulativeDuration += chargingDuration;
 
@@ -567,7 +601,7 @@ function convertStationsToAppFormat(stations: any[]): Station[] {
     availableChargers: station.isAvailable ? Math.max(1, station.numberOfPoints - 1) : 0,
     totalChargers: station.numberOfPoints || 2,
     chargingSpeed: station.isFastCharger ? `Fast (${station.powerKW || 50}kW)` : 'Standard (22kW)',
-    pricePerKwh: PRICING.defaultPricePerKwh,
+    pricePerKwh: 0, // Will be calculated dynamically based on charging speed
     amenities: ['Restroom', 'WiFi'],
     rating: 4.0,
     powerKW: station.powerKW || (station.isFastCharger ? 50 : 22),

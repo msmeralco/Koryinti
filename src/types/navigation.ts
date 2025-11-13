@@ -66,11 +66,16 @@ export interface Station {
   longitude: number;
   availableChargers: number;
   totalChargers: number;
-  chargingSpeed: string;
+  chargingSpeed: string; // 'Slow', 'Fast', 'Ultra Fast'
   pricePerKwh: number;
   amenities: string[];
   rating: number;
   powerKW?: number; // Charging power in kW
+  plugTypes?: string[]; // Array of available plug types (CCS2, Type 2, CHAdeMO, etc.)
+  operator?: string; // Station operator (Shell, Tesla, ACMobility, etc.)
+  isTeslaSupercharger?: boolean; // Flag for Tesla Supercharger pricing
+  connectionFee?: number; // Per-session connection fee
+  hasIdleFee?: boolean; // Whether station charges idle fees
 }
 
 export interface ReservationDetails {
