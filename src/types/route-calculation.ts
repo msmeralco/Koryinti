@@ -99,8 +99,9 @@ export interface ChargingStop {
  */
 export interface CostBreakdown {
   chargingCost: number; // Total cost of electricity
-  bookingFee: number; // 2% of charging cost
-  serviceFee: number; // Flat service fee
+  bookingFee: number; // Flat PHP 30 booking fee
+  commissionFee: number; // 2% commission on charging cost
+  serviceFee: number; // Flat service fee (currently 0)
   totalCost: number; // Sum of all costs
 }
 

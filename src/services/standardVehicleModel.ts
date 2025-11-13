@@ -155,7 +155,8 @@ export const PRICING = {
 
   // Session fees
   connectionFee: 25.0, // ₱25 per charging session (Solarius: ₱30, standardized lower)
-  bookingFeeRate: 0.02, // 2% platform fee
+  bookingFee: 30.0, // Flat ₱30 booking fee per trip
+  commissionFeeRate: 0.02, // 2% commission on charging cost
   serviceFee: 0.0, // Removed per trip service fee
 
   // Idle fees (future implementation)

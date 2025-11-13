@@ -539,12 +539,14 @@ function toRad(degrees: number): number {
  */
 function calculateCosts(chargingStops: ChargingStop[]): CostBreakdown {
   const chargingCost = chargingStops.reduce((sum, stop) => sum + stop.cost, 0);
-  const bookingFee = chargingCost * PRICING.bookingFeeRate;
-  const totalCost = chargingCost + bookingFee;
+  const bookingFee = PRICING.bookingFee; // Flat PHP 30 booking fee
+  const commissionFee = chargingCost * PRICING.commissionFeeRate; // 2% commission
+  const totalCost = chargingCost + bookingFee + commissionFee;
 
   return {
     chargingCost: Math.round(chargingCost * 100) / 100,
     bookingFee: Math.round(bookingFee * 100) / 100,
+    commissionFee: Math.round(commissionFee * 100) / 100,
     serviceFee: 0, // No service fee for presentation
     totalCost: Math.round(totalCost * 100) / 100,
   };
@@ -554,18 +556,28 @@ function calculateCosts(chargingStops: ChargingStop[]): CostBreakdown {
  * Convert OpenChargeMap stations to app format
  */
 function convertStationsToAppFormat(stations: any[]): Station[] {
-  return stations.map(station => ({
-    id: station.id.toString(),
-    name: station.name,
-    address: station.address,
-    latitude: station.latitude,
-    longitude: station.longitude,
-    availableChargers: station.isAvailable ? Math.max(1, station.numberOfPoints - 1) : 0,
-    totalChargers: station.numberOfPoints || 2,
-    chargingSpeed: station.isFastCharger ? `Fast (${station.powerKW || 50}kW)` : 'Standard (22kW)',
-    pricePerKwh: 0, // Will be calculated dynamically based on charging speed
-    amenities: ['Restroom', 'WiFi'],
-    rating: 4.0,
-    powerKW: station.powerKW || (station.isFastCharger ? 50 : 22),
-  }));
+  return stations.map(station => {
+    const powerKW = station.powerKW || (station.isFastCharger ? 50 : 22);
+    const isTeslaSupercharger = station.isTeslaSupercharger || false;
+    
+    // Calculate dynamic pricing based on station power
+    const pricePerKwh = getPricePerKwh(powerKW, isTeslaSupercharger);
+    
+    return {
+      id: station.id.toString(),
+      name: station.name,
+      address: station.address,
+      latitude: station.latitude,
+      longitude: station.longitude,
+      availableChargers: station.isAvailable ? Math.max(1, station.numberOfPoints - 1) : 0,
+      totalChargers: station.numberOfPoints || 2,
+      chargingSpeed: station.isFastCharger ? `Fast (${powerKW}kW)` : 'Standard (22kW)',
+      pricePerKwh,
+      connectionFee: PRICING.connectionFee,
+      amenities: ['Restroom', 'WiFi'],
+      rating: 4.0,
+      powerKW,
+      isTeslaSupercharger,
+    };
+  });
 }
