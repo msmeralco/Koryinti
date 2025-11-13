@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MapStackParamList, EnrichedStation } from '@/types/navigation';
 import mapDarkStyle from './mapDarkStyle.json';
+import { addActiveReservation } from '@/services/reservationsStore';
 
 type Props = NativeStackScreenProps<MapStackParamList, 'StationProfile'>;
 
@@ -19,7 +20,11 @@ export default function StationProfileScreen({ navigation, route }: Props) {
   const { station } = route.params;
 
   const handleReserve = () => {
-    navigation.navigate('ReserveStation', { stationId: station.id });
+    // Add active reservation & navigate to Reservations tab so user sees it immediately.
+    addActiveReservation(station.title, 60);
+    // Navigate to the Reservations tab (parent navigator assumed to have it)
+    const parent = navigation.getParent();
+    if (parent) parent.navigate('Reservations' as never);
   };
 
   const isFull = station.availablePlugs <= 0;

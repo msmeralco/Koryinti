@@ -1,59 +1,33 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
+import { getReservations, ReservationSession } from '@/services/reservationsStore';
 
 const CarImage = require('../../../assets/carimage.png');
 
-const MOCK_RESERVATIONS = [
-  {
-    id: '1',
-    station: 'BF Homes, Paranaque City',
-    hostName: 'Mark Joseph Ilagan',
-    vehicle: 'Tesla Model 3',
-    date: 'September 30, 2025',
-    timeRange: '3:00 PM - 4:00 PM',
-    minutesLeft: 53,
-  },
-  {
-    id: '2',
-    station: 'Katipunan, Quezon City',
-    hostName: 'Ma. Regina Rosel Galfo',
-    vehicle: 'Tesla Model 3',
-    date: 'September 23, 2025',
-    timeRange: '2:00 PM - 4:00 PM',
-    minutesLeft: 0,
-  },
-  {
-    id: '3',
-    station: 'Timog Avenue, Quezon City',
-    hostName: 'Juan Dela Cruz III',
-    vehicle: 'Tesla Model 3',
-    date: 'September 13, 2025',
-    timeRange: '3:00 PM - 4:00 PM',
-    minutesLeft: 0,
-  },
-  {
-    id: '4',
-    station: 'BF Homes, Paranaque City',
-    hostName: 'Mark Joseph Ilagan',
-    vehicle: 'Tesla Model 3',
-    date: 'September 3, 2025',
-    timeRange: '4:00 PM - 5:00 PM',
-    minutesLeft: 0,
-  },
-];
+// Dynamic reservations retrieved from store (first item may be active)
+
 
 /**
  * ReservationsScreen shows active & past charging sessions
  * styled like the Sessions mock: dark theme + hero image + green pill.
  */
 export default function ReservationsScreen() {
+  const [reservations, setReservations] = useState<ReservationSession[]>(getReservations());
+
+  // Refresh when screen gains focus (e.g. after creating a reservation on StationProfile)
+  useFocusEffect(
+    React.useCallback(() => {
+      setReservations(getReservations());
+    }, [])
+  );
   const renderReservation = ({
     item,
     index,
   }: {
-    item: (typeof MOCK_RESERVATIONS)[0];
+    item: ReservationSession;
     index: number;
   }) => {
     const isOngoing = index === 0 && item.minutesLeft > 0;
@@ -115,7 +89,7 @@ export default function ReservationsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top','left','right']}>
       <FlatList
-        data={MOCK_RESERVATIONS}
+        data={reservations}
         keyExtractor={(item) => item.id}
         renderItem={renderReservation}
         contentContainerStyle={styles.listContent}
