@@ -257,12 +257,6 @@ export default function TripRouteScreen({ navigation, route }: Props) {
                     ₱{detailedRoute.costBreakdown.bookingFee.toFixed(2)}
                   </Text>
                 </View>
-                <View style={styles.costRow}>
-                  <Text style={styles.costLabel}>Service Fee</Text>
-                  <Text style={styles.costValue}>
-                    ₱{detailedRoute.costBreakdown.serviceFee.toFixed(2)}
-                  </Text>
-                </View>
                 <View style={styles.dividerThin} />
                 <View style={styles.costRow}>
                   <Text style={styles.costLabelBold}>Total Cost</Text>

@@ -544,13 +544,12 @@ function toRad(degrees: number): number {
 function calculateCosts(chargingStops: ChargingStop[]): CostBreakdown {
   const chargingCost = chargingStops.reduce((sum, stop) => sum + stop.cost, 0);
   const bookingFee = chargingCost * PRICING.bookingFeeRate;
-  const serviceFee = PRICING.serviceFee;
-  const totalCost = chargingCost + bookingFee + serviceFee;
+  const totalCost = chargingCost + bookingFee;
 
   return {
     chargingCost: Math.round(chargingCost * 100) / 100,
     bookingFee: Math.round(bookingFee * 100) / 100,
-    serviceFee,
+    serviceFee: 0, // No service fee for presentation
     totalCost: Math.round(totalCost * 100) / 100,
   };
 }
