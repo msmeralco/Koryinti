@@ -40,7 +40,7 @@ const getPillWidthForRoute = (routeName: string, tabWidth: number) => {
 
   const iconWidth = 24;
   const labelMargin = 8;
-  const perChar = 11;    // approximate char width
+  const perChar = 11; // approximate char width
   const sidePadding = 16;
 
   const contentWidth = iconWidth + labelMargin + perChar * charCount;
@@ -166,7 +166,9 @@ function AnimatedTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
           });
         };
 
-        const color = '#FFFFFF';
+        // white when idle, black when selected
+        const iconColor = isFocused ? '#000000' : '#FFFFFF';
+        const labelColor = isFocused ? '#000000' : '#FFFFFF';
 
         return (
           <TouchableOpacity
@@ -181,16 +183,17 @@ function AnimatedTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
             activeOpacity={0.8}
           >
             <View style={styles.tabContent}>
-              {/* icon – fixed vertical position */}
-              {getIcon(route.name, color, 22)}
+              {/* icon – color depends on focus */}
+              {getIcon(route.name, iconColor, 22)}
 
-              {/* label – only render for active tab, so icons of others stay perfectly centered */}
+              {/* label – only render for active tab */}
               {isFocused && (
                 <Animated.Text
                   numberOfLines={1}
                   style={[
                     styles.label,
                     {
+                      color: labelColor,
                       marginLeft: 8,
                       opacity: labelOpacity,
                       transform: [{ scale: labelScale }],
@@ -233,7 +236,7 @@ const styles = StyleSheet.create({
   pill: {
     position: 'absolute',
     borderRadius: 999,
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#00F470', // your bright green
     zIndex: 0,
   },
   tabItem: {
@@ -243,11 +246,10 @@ const styles = StyleSheet.create({
   },
   tabContent: {
     flexDirection: 'row',
-    alignItems: 'center',   // vertical centering inside pill
+    alignItems: 'center', // vertical centering inside pill
     justifyContent: 'center', // horizontal centering
   },
   label: {
-    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
   },
