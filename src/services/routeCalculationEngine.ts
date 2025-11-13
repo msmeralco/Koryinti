@@ -70,17 +70,39 @@ export async function calculateDetailedRoute(
     // Step 3: Check if charging is needed
     // Using DEMO mode with aggressive battery degradation for presentation
     const vehicle = getStandardVehicle();
-    const requiresCharging = needsCharging(currentBatteryPercent, routeData.distance);
+    const requiresCharging = needsCharging(
+      currentBatteryPercent,
+      routeData.distance,
+      CONSUMPTION_MULTIPLIERS.demo,
+      minimumArrivalBattery
+    );
+
+    // Debug logging
+    const batteryUsed = calculateBatteryConsumption(
+      routeData.distance,
+      CONSUMPTION_MULTIPLIERS.demo
+    );
+    const batteryAtDestination = currentBatteryPercent - batteryUsed;
+    console.warn('🔋 Battery Calculation:', {
+      currentBattery: `${currentBatteryPercent}%`,
+      distance: `${routeData.distance.toFixed(2)} km`,
+      batteryUsed: `${batteryUsed.toFixed(2)}%`,
+      batteryAtDestination: `${batteryAtDestination.toFixed(2)}%`,
+      minimumRequired: `${minimumArrivalBattery}%`,
+      requiresCharging,
+    });
 
     // Step 4: Find charging stations if needed
     let chargingStations: Station[] = [];
     if (requiresCharging) {
       const rawStations = await searchStationsAlongRoute(routeData.geometry, maxDetourKm);
+      console.warn(`🔍 Found ${rawStations.length} raw charging stations`);
       const filtered = filterStations(rawStations, {
-        onlyAvailable: true,
-        onlyFastChargers: preferFastChargers,
-        minPowerKW: preferFastChargers ? 50 : 22,
+        onlyAvailable: false, // Don't filter by availability - many stations don't report this
+        onlyFastChargers: false, // Accept all chargers for demo
+        minPowerKW: undefined, // No minimum power requirement for demo
       });
+      console.warn(`✅ Filtered to ${filtered.length} suitable charging stations`);
       chargingStations = convertStationsToAppFormat(filtered);
     }
 

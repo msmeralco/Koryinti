@@ -131,7 +131,8 @@ function parseStations(data: any[]): ChargingStation[] {
       }
     });
 
-    const isAvailable = statusType.toLowerCase().includes('operational');
+    // For demo/presentation: assume all stations are available
+    const isAvailable = true; // Always available for demo purposes
     const isFastCharger = maxPowerKW >= 50;
 
     return {

@@ -32,6 +32,7 @@ export default function PlanTripScreen({ navigation }: Props) {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [batteryPercent, setBatteryPercent] = useState(80); // Default 80%
+  const [minArrivalBattery, setMinArrivalBattery] = useState(25); // Minimum battery at destination
   const [fromSuggestions, setFromSuggestions] = useState<GeocodingResult[]>([]);
   const [toSuggestions, setToSuggestions] = useState<GeocodingResult[]>([]);
   const [searchingFrom, setSearchingFrom] = useState(false);
@@ -137,7 +138,12 @@ export default function PlanTripScreen({ navigation }: Props) {
   const handlePlanRoute = () => {
     if (from && to) {
       Keyboard.dismiss();
-      navigation.navigate('TripRoute', { from, to, currentBatteryPercent: batteryPercent });
+      navigation.navigate('TripRoute', {
+        from,
+        to,
+        currentBatteryPercent: batteryPercent,
+        minimumArrivalBattery: minArrivalBattery,
+      });
     }
   };
 
@@ -301,6 +307,25 @@ export default function PlanTripScreen({ navigation }: Props) {
                 maxLength={3}
               />
               <Text style={styles.batteryHint}>Enter your current battery percentage (0-100%)</Text>
+            </View>
+
+            {/* Minimum Arrival Battery Input */}
+            <View style={styles.batteryContainer}>
+              <Text style={styles.batteryLabel}>Minimum Arrival Battery (%)</Text>
+              <TextInput
+                style={styles.batteryInput}
+                placeholder="Minimum battery at destination (0-100)"
+                value={minArrivalBattery.toString()}
+                onChangeText={text => {
+                  const num = parseInt(text) || 0;
+                  setMinArrivalBattery(Math.min(Math.max(num, 0), 100));
+                }}
+                keyboardType="number-pad"
+                maxLength={3}
+              />
+              <Text style={styles.batteryHint}>
+                Charging stations will be recommended if needed to reach this level
+              </Text>
             </View>
 
             <TouchableOpacity
