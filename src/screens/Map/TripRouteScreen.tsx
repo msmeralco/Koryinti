@@ -21,6 +21,7 @@ export default function TripRouteScreen({ navigation, route }: Props) {
   const [detailedRoute, setDetailedRoute] = useState<DetailedRoute | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDetailsCollapsed, setIsDetailsCollapsed] = useState(false);
 
   // Compute an initial region once route is available
   const region = useMemo(() => {
@@ -191,96 +192,114 @@ export default function TripRouteScreen({ navigation, route }: Props) {
         />
       </MapView>
 
-      <View style={styles.bottomSheet}>
-        <View style={styles.handle} />
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          <Text style={styles.title}>Suggested Route</Text>
-          <Text style={styles.subtitle}>
-            {from} → {to}
+      <View style={[styles.bottomSheet, isDetailsCollapsed && styles.bottomSheetCollapsed]}>
+        {/* Toggle button */}
+        <TouchableOpacity
+          style={styles.toggleButton}
+          onPress={() => setIsDetailsCollapsed(!isDetailsCollapsed)}
+        >
+          <Text style={styles.toggleButtonText}>
+            {isDetailsCollapsed ? '▲ Show Route Details' : '▼ Hide to View Map'}
           </Text>
+        </TouchableOpacity>
 
-          {/* Quick Stats */}
-          <View style={styles.quickStats}>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{detailedRoute.totalDistance} km</Text>
-              <Text style={styles.statLabel}>Distance</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>
-                {Math.floor(detailedRoute.totalDuration / 60)}h {detailedRoute.totalDuration % 60}m
+        <View style={styles.handle} />
+
+        {!isDetailsCollapsed && (
+          <>
+            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+              <Text style={styles.title}>Suggested Route</Text>
+              <Text style={styles.subtitle}>
+                {from} → {to}
               </Text>
-              <Text style={styles.statLabel}>Total Time</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{detailedRoute.chargingStops.length}</Text>
-              <Text style={styles.statLabel}>Charging Stops</Text>
-            </View>
-          </View>
 
-          {/* Route Details */}
-          <Text style={styles.sectionTitle}>Route Details</Text>
-          {detailedRoute.segments.map(segment => (
-            <RouteSegmentCard key={segment.id} segment={segment} />
-          ))}
-
-          {/* Cost Summary */}
-          {detailedRoute.chargingStops.length > 0 && (
-            <>
-              <View style={styles.divider} />
-              <Text style={styles.sectionTitle}>Cost Summary</Text>
-              <View style={styles.costSummary}>
-                <View style={styles.costRow}>
-                  <Text style={styles.costLabel}>Total Distance</Text>
-                  <Text style={styles.costValue}>{detailedRoute.totalDistance} km</Text>
+              {/* Quick Stats */}
+              <View style={styles.quickStats}>
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>{detailedRoute.totalDistance} km</Text>
+                  <Text style={styles.statLabel}>Distance</Text>
                 </View>
-                <View style={styles.costRow}>
-                  <Text style={styles.costLabel}>Total Travel Time</Text>
-                  <Text style={styles.costValue}>
-                    {Math.floor(detailedRoute.totalTravelTime / 60)}h{' '}
-                    {detailedRoute.totalTravelTime % 60}m
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>
+                    {Math.floor(detailedRoute.totalDuration / 60)}h{' '}
+                    {detailedRoute.totalDuration % 60}m
                   </Text>
+                  <Text style={styles.statLabel}>Total Time</Text>
                 </View>
-                <View style={styles.costRow}>
-                  <Text style={styles.costLabel}>Charging Time</Text>
-                  <Text style={styles.costValue}>{detailedRoute.totalChargingTime} min</Text>
-                </View>
-                <View style={styles.dividerThin} />
-                <View style={styles.costRow}>
-                  <Text style={styles.costLabel}>Charging Cost</Text>
-                  <Text style={styles.costValue}>
-                    ₱{detailedRoute.costBreakdown.chargingCost.toFixed(2)}
-                  </Text>
-                </View>
-                <View style={styles.costRow}>
-                  <Text style={styles.costLabel}>Booking Fee (2%)</Text>
-                  <Text style={styles.costValue}>
-                    ₱{detailedRoute.costBreakdown.bookingFee.toFixed(2)}
-                  </Text>
-                </View>
-                <View style={styles.dividerThin} />
-                <View style={styles.costRow}>
-                  <Text style={styles.costLabelBold}>Total Cost</Text>
-                  <Text style={styles.costValueBold}>
-                    ₱{detailedRoute.costBreakdown.totalCost.toFixed(2)}
-                  </Text>
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>{detailedRoute.chargingStops.length}</Text>
+                  <Text style={styles.statLabel}>Charging Stops</Text>
                 </View>
               </View>
 
-              <TouchableOpacity style={styles.reserveButton} onPress={handleReserveChargers}>
-                <Text style={styles.reserveButtonText}>Reserve Chargers</Text>
-              </TouchableOpacity>
-            </>
-          )}
+              {/* Route Details */}
+              <Text style={styles.sectionTitle}>Route Details</Text>
+              {detailedRoute.segments.map(segment => (
+                <RouteSegmentCard key={segment.id} segment={segment} />
+              ))}
 
-          {detailedRoute.chargingStops.length === 0 && (
-            <View style={styles.noChargingNeeded}>
-              <Text style={styles.noChargingText}>✅ No charging needed!</Text>
-              <Text style={styles.noChargingSubtext}>Your battery is sufficient for this trip</Text>
-            </View>
-          )}
+              {/* Cost Summary */}
+              {detailedRoute.chargingStops.length > 0 && (
+                <>
+                  <View style={styles.divider} />
+                  <Text style={styles.sectionTitle}>Cost Summary</Text>
+                  <View style={styles.costSummary}>
+                    <View style={styles.costRow}>
+                      <Text style={styles.costLabel}>Total Distance</Text>
+                      <Text style={styles.costValue}>{detailedRoute.totalDistance} km</Text>
+                    </View>
+                    <View style={styles.costRow}>
+                      <Text style={styles.costLabel}>Total Travel Time</Text>
+                      <Text style={styles.costValue}>
+                        {Math.floor(detailedRoute.totalTravelTime / 60)}h{' '}
+                        {detailedRoute.totalTravelTime % 60}m
+                      </Text>
+                    </View>
+                    <View style={styles.costRow}>
+                      <Text style={styles.costLabel}>Charging Time</Text>
+                      <Text style={styles.costValue}>{detailedRoute.totalChargingTime} min</Text>
+                    </View>
+                    <View style={styles.dividerThin} />
+                    <View style={styles.costRow}>
+                      <Text style={styles.costLabel}>Charging Cost</Text>
+                      <Text style={styles.costValue}>
+                        ₱{detailedRoute.costBreakdown.chargingCost.toFixed(2)}
+                      </Text>
+                    </View>
+                    <View style={styles.costRow}>
+                      <Text style={styles.costLabel}>Booking Fee (2%)</Text>
+                      <Text style={styles.costValue}>
+                        ₱{detailedRoute.costBreakdown.bookingFee.toFixed(2)}
+                      </Text>
+                    </View>
+                    <View style={styles.dividerThin} />
+                    <View style={styles.costRow}>
+                      <Text style={styles.costLabelBold}>Total Cost</Text>
+                      <Text style={styles.costValueBold}>
+                        ₱{detailedRoute.costBreakdown.totalCost.toFixed(2)}
+                      </Text>
+                    </View>
+                  </View>
 
-          <View style={styles.bottomPadding} />
-        </ScrollView>
+                  <TouchableOpacity style={styles.reserveButton} onPress={handleReserveChargers}>
+                    <Text style={styles.reserveButtonText}>Reserve Chargers</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+
+              {detailedRoute.chargingStops.length === 0 && (
+                <View style={styles.noChargingNeeded}>
+                  <Text style={styles.noChargingText}>✅ No charging needed!</Text>
+                  <Text style={styles.noChargingSubtext}>
+                    Your battery is sufficient for this trip
+                  </Text>
+                </View>
+              )}
+
+              <View style={styles.bottomPadding} />
+            </ScrollView>
+          </>
+        )}
       </View>
     </View>
   );
@@ -439,6 +458,24 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 5,
+  },
+  bottomSheetCollapsed: {
+    maxHeight: 60,
+    paddingTop: 5,
+  },
+  toggleButton: {
+    alignSelf: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 20,
+    marginTop: 5,
+    marginBottom: 5,
+  },
+  toggleButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#4CAF50',
   },
   handle: {
     width: 40,
