@@ -40,6 +40,7 @@ export const CONSUMPTION_MULTIPLIERS = {
   downhill: 0.85, // Regenerative braking benefit
   withAC: 1.08, // Air conditioning usage (future)
   coldWeather: 1.12, // Battery efficiency loss in cold (future)
+  demo: 2.8, // Aggressive consumption for demo/presentation purposes to showcase charging needs
 };
 
 /**

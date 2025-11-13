@@ -5,7 +5,9 @@
  * Docs: https://openrouteservice.org/dev/#/api-docs
  */
 
-const API_KEY = process.env.OPENROUTE_SERVICE_API_KEY || '';
+import { OPENROUTE_SERVICE_API_KEY } from '@env';
+
+const API_KEY = OPENROUTE_SERVICE_API_KEY || '';
 const BASE_URL = 'https://api.openrouteservice.org/v2/directions/driving-car';
 
 export interface RouteCoordinate {

@@ -5,7 +5,9 @@
  * Docs: https://openchargemap.org/site/develop/api
  */
 
-const API_KEY = process.env.OPENCHARGEMAP_API_KEY || '';
+import { OPENCHARGEMAP_API_KEY } from '@env';
+
+const API_KEY = OPENCHARGEMAP_API_KEY || '';
 const BASE_URL = 'https://api.openchargemap.io/v3/poi';
 
 export interface ChargingStation {

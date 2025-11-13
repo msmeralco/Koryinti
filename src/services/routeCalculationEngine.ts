@@ -68,6 +68,7 @@ export async function calculateDetailedRoute(
     const routeData: RouteResult = await calculateOpenRoute(fromCoords, toCoords, true, false);
 
     // Step 3: Check if charging is needed
+    // Using DEMO mode with aggressive battery degradation for presentation
     const vehicle = getStandardVehicle();
     const requiresCharging = needsCharging(currentBatteryPercent, routeData.distance);
 
@@ -99,17 +100,18 @@ export async function calculateDetailedRoute(
     const costBreakdown = calculateCosts(chargingStops);
 
     // Step 7: Build detailed route object
+    // Using aggressive demo consumption multiplier
     const totalChargingTime = chargingStops.reduce((sum, stop) => sum + stop.chargingDuration, 0);
     const totalEnergyCharged = chargingStops.reduce((sum, stop) => sum + stop.energyCharged, 0);
     const totalEnergyUsed =
-      ((routeData.distance * vehicle.avgConsumption * CONSUMPTION_MULTIPLIERS.highway) /
+      ((routeData.distance * vehicle.avgConsumption * CONSUMPTION_MULTIPLIERS.demo) /
         vehicle.batteryCapacity) *
       100;
 
     const finalBattery =
       currentBatteryPercent +
       chargingStops.reduce((sum, stop) => sum + (stop.departureBattery - stop.arrivalBattery), 0) -
-      calculateBatteryConsumption(routeData.distance, CONSUMPTION_MULTIPLIERS.highway);
+      calculateBatteryConsumption(routeData.distance, CONSUMPTION_MULTIPLIERS.demo);
 
     const detailedRoute: DetailedRoute = {
       id: `route-${Date.now()}`,
@@ -182,7 +184,7 @@ function planRouteSegments(
   // Check if we need charging stops
   const batteryNeeded = calculateBatteryConsumption(
     routeData.distance,
-    CONSUMPTION_MULTIPLIERS.highway
+    CONSUMPTION_MULTIPLIERS.demo // Use aggressive demo consumption
   );
   const batteryAtDestination = currentBattery - batteryNeeded;
 
@@ -232,7 +234,7 @@ function planRouteSegments(
       const durationToStation = routeData.duration * 0.4;
       const batteryAtStation =
         currentBattery -
-        calculateBatteryConsumption(distanceToStation, CONSUMPTION_MULTIPLIERS.highway);
+        calculateBatteryConsumption(distanceToStation, CONSUMPTION_MULTIPLIERS.demo);
 
       cumulativeDistance += distanceToStation;
       cumulativeDuration += durationToStation;
@@ -305,7 +307,7 @@ function planRouteSegments(
       const remainingDuration = routeData.duration - durationToStation;
       const batteryForRemaining = calculateBatteryConsumption(
         remainingDistance,
-        CONSUMPTION_MULTIPLIERS.highway
+        CONSUMPTION_MULTIPLIERS.demo
       );
       const finalBattery = CHARGING_TARGET_PERCENT - batteryForRemaining;
 
