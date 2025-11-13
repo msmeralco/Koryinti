@@ -142,11 +142,8 @@ export default function PlanTripScreen({ navigation }: Props) {
     if (from && to) {
       Keyboard.dismiss();
 
-      // Show loading state
-      Alert.alert('Calculating Route', 'Please wait while we plan your trip...');
-
       try {
-        // Pre-validate the route to check if it's possible
+        // Pre-validate the route to check if it's possible (silently)
         const result = await calculateDetailedRoute({
           from,
           to,
