@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { LineChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
@@ -58,6 +58,7 @@ const CONSUMPTION_DATA: Record<string, { months: number[]; label: string }> = {
 export default function AdminDashboard() {
   const [selectedRegion, setSelectedRegion] = useState(SELECT_OPTIONS[0]); // default to Overall
   const [selectedMonth, setSelectedMonth] = useState(MONTH_SELECT_OPTIONS[MONTH_SELECT_OPTIONS.length - 1]);
+  const [sortDescending, setSortDescending] = useState(false);
 
   const shortRegionLabel = (r: string) => {
     const parts = r.split('–').map((p) => p.trim());
@@ -113,6 +114,14 @@ export default function AdminDashboard() {
   const ncrKey = REGIONS.find(r => r.startsWith('NCR')) ?? 'NCR – National Capital';
   const ncrMonths = CONSUMPTION_DATA[ncrKey]?.months ?? [];
   const ncrTotalBaseline = ncrMonths.length ? ncrMonths.reduce((s, v) => s + v, 0) : Math.max(...barValues, 1);
+
+  // displayed order (original or sorted by current barValues desc)
+  const displayedRegions = useMemo(() => {
+    if (!sortDescending) return REGIONS;
+    const pairs = REGIONS.map((r, idx) => ({ region: r, value: barValues[idx] ?? 0 }));
+    pairs.sort((a, b) => b.value - a.value);
+    return pairs.map(p => p.region);
+  }, [barValues, sortDescending]);
 
   return (
     <ScrollView style={styles.container}>
@@ -185,12 +194,23 @@ export default function AdminDashboard() {
             ))}
           </Picker>
         </View>
+
+        {/* Sort button */}
+        <View style={{ marginTop: 12, alignItems: 'flex-end' }}>
+          <TouchableOpacity
+            onPress={() => setSortDescending(s => !s)}
+            style={[styles.sortButton, sortDescending ? styles.sortButtonActive : null]}
+          >
+            <Text style={styles.sortButtonText}>{sortDescending ? 'Sorted: High → Low' : 'Sort High → Low'}</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Bar Chart - All Regions (horizontal bars) */}
       <ScrollView horizontal showsHorizontalScrollIndicator>
         <View style={{ width: chartWidth }}>
-         
+          
+          
 
           {/* bars */}
           <View style={{ paddingVertical: 6 }}>
@@ -201,8 +221,9 @@ export default function AdminDashboard() {
               const available = Math.round(baseAvailable * 0.85);
               const minVisiblePx = 2;
 
-              return REGIONS.map((r, i) => {
-                const val = barValues[i] ?? 0;
+              return displayedRegions.map((r) => {
+                const idx = REGIONS.indexOf(r);
+                const val = barValues[idx] ?? 0;
                 // ratio relative to NCR TOTAL baseline (not month-specific)
                 const ratio = ncrTotalBaseline > 0 ? Math.min(val / ncrTotalBaseline, 1) : 0;
                 const fillWidthRaw = Math.round(ratio * available);
@@ -275,6 +296,25 @@ const styles = StyleSheet.create({
   chart: { marginVertical: 10, borderRadius: 8, backgroundColor: '#2c3035' },
   footer: { fontSize: 14, color: '#ffffff', marginTop: 20, marginBottom: 30, textAlign: 'center' },
 
+  /* sort button */
+  sortButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    backgroundColor: '#2a2d2f',
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  sortButtonActive: {
+    backgroundColor: '#46f98c22',
+    borderColor: '#46f98c',
+  },
+  sortButtonText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+
   /* horizontal bar chart styles */
   barRow: {
     flexDirection: 'row',
@@ -316,7 +356,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     backgroundColor: 'transparent',
-    display:'none'
+    display:'none',
   },
   axisContainer: {
     flexDirection: 'row',
