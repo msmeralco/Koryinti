@@ -1,6 +1,7 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, FlatList } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { MapStackParamList } from '@/types/navigation';
+import { MapStackParamList, EnrichedStation } from '@/types/navigation';
 
 type Props = NativeStackScreenProps<MapStackParamList, 'ReservationDetails'>;
 
@@ -9,7 +10,15 @@ type Props = NativeStackScreenProps<MapStackParamList, 'ReservationDetails'>;
  * with options to scan QR code, cancel, or report issues.
  */
 export default function ReservationDetailsScreen({ navigation, route }: Props) {
-  const { stations } = route.params;
+  const { stations, routeId } = route.params;
+
+  // Synthetic assumption: each stop consumes 20 kWh.
+  const energyPerStopKWh = 20;
+  const stationCosts = stations.map(s => ({
+    id: s.id,
+    cost: s.pricePerKWh * energyPerStopKWh,
+  }));
+  const totalCost = stationCosts.reduce((sum, c) => sum + c.cost, 0);
 
   const handleScanQR = () => {
     navigation.navigate('ScanQR', { reservationId: 'res-123' });
@@ -46,21 +55,41 @@ export default function ReservationDetailsScreen({ navigation, route }: Props) {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Station Information</Text>
-        <Text style={styles.stationName}>Downtown Charging Hub</Text>
-        <Text style={styles.stationAddress}>123 Main Street, Downtown</Text>
-        <Text style={styles.stationInfo}>Charger #3 - 150kW DC Fast Charging</Text>
+        <Text style={styles.sectionTitle}>Trip Stations</Text>
+        {stations.map(station => (
+          <View key={station.id} style={styles.stationCard}>
+            <View style={{flex:1}}>
+              <Text style={styles.stationName}>{station.title}</Text>
+              <Text style={styles.stationAddress}>{station.address}</Text>
+              <Text style={styles.stationInfo}>Distance: {station.distanceKm.toFixed(1)} km • {station.driveMinutes.toFixed(0)} min drive</Text>
+              <Text style={styles.stationInfo}>Plugs: {station.availablePlugs}/{station.totalPlugs} available (In use: {station.plugsInUse})</Text>
+              <Text style={styles.stationInfo}>Power: {station.powerKW.toFixed(0)} kW • Types: {station.plugTypes.join(', ') || 'N/A'}</Text>
+              <Text style={styles.stationInfo}>Amenities: {['WiFi','Bathroom','PWD','Lounge'].filter((_,i)=>[station.amenities.wifi,station.amenities.bathroom,station.amenities.pwdFriendly,station.amenities.waitingLounge][i]).join(', ') || 'None'}</Text>
+              <Text style={styles.stationInfo}>Rating: ⭐ {station.rating.toFixed(1)}</Text>
+              <Text style={styles.stationInfo}>Est. Stop Cost: ₱{(station.pricePerKWh * energyPerStopKWh).toFixed(2)}</Text>
+            </View>
+            <TouchableOpacity
+              style={[styles.reserveBtn, station.availablePlugs===0 && styles.reserveBtnDisabled]}
+              disabled={station.availablePlugs===0}
+              onPress={() => navigation.navigate('ReserveStation', { stationId: station.id })}
+            >
+              <Text style={styles.reserveBtnText}>{station.availablePlugs===0 ? 'Full' : 'Reserve'}</Text>
+            </TouchableOpacity>
+          </View>
+        ))}
       </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Cost Summary</Text>
+        {stationCosts.map(sc => (
+          <View key={sc.id} style={styles.detailRow}>
+            <Text style={styles.label}>Station {sc.id}:</Text>
+            <Text style={styles.value}>₱{sc.cost.toFixed(2)}</Text>
+          </View>
+        ))}
         <View style={styles.detailRow}>
-          <Text style={styles.label}>Reservation Fee:</Text>
-          <Text style={styles.value}>$12.50</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Text style={styles.label}>Estimated Total:</Text>
-          <Text style={[styles.value, styles.totalValue]}>$12.50</Text>
+          <Text style={styles.label}>Total Estimated:</Text>
+          <Text style={[styles.value, styles.totalValue]}>₱{totalCost.toFixed(2)}</Text>
         </View>
       </View>
 
@@ -139,6 +168,27 @@ const styles = StyleSheet.create({
   stationInfo: {
     fontSize: 14,
     color: '#666',
+  },
+  stationCard: {
+    flexDirection: 'row',
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    gap: 12,
+  },
+  reserveBtn: {
+    backgroundColor: '#4CAF50',
+    alignSelf: 'flex-start',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 6,
+  },
+  reserveBtnDisabled: {
+    backgroundColor: '#9e9e9e',
+  },
+  reserveBtnText: {
+    color: '#fff',
+    fontWeight: '600',
   },
   buttonContainer: {
     padding: 20,

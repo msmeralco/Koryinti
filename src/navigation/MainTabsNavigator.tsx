@@ -10,6 +10,10 @@ import ReservationsScreen from '@/screens/Reservations/ReservationsScreen';
 import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 
 const Tab = createBottomTabNavigator<MainTabsParamList>();
+/**
+ * MainTabsNavigator provides the primary bottom tab navigation
+ * for the main sections of the app after user registration/login
+ */
 
 const TAB_BAR_BG = '#050608';
 const ACTIVE_PILL = '#4CAF50';
