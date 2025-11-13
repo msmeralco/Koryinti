@@ -13,26 +13,48 @@ export interface RouteCoordinate {
   longitude: number;
 }
 
+export interface RouteStep {
+  distance: number; // meters
+  duration: number; // seconds
+  type: number; // Step type code from OpenRouteService
+  instruction: string; // Human-readable instruction
+  name?: string; // Road name
+  exitNumber?: number; // For roundabouts
+  way_points: [number, number]; // [start_index, end_index] in geometry
+}
+
+export interface RouteSegment {
+  distance: number; // meters
+  duration: number; // seconds
+  steps: RouteStep[];
+}
+
 export interface RouteResult {
   distance: number; // in kilometers
   duration: number; // in minutes
   geometry: RouteCoordinate[]; // Polyline coordinates for map
   bbox: number[]; // Bounding box [minLng, minLat, maxLng, maxLat]
+  segments?: RouteSegment[]; // Turn-by-turn instructions
+  elevation?: number[]; // Elevation data if requested
 }
 
 /**
  * Calculate route between two points using OpenRouteService
  * @param start Starting coordinates {latitude, longitude}
  * @param end Ending coordinates {latitude, longitude}
- * @returns Route with distance, duration, and geometry
+ * @param includeInstructions Whether to include turn-by-turn instructions (default: true)
+ * @param includeElevation Whether to include elevation data (default: false)
+ * @returns Route with distance, duration, geometry, and optionally instructions
  */
 export async function calculateRoute(
   start: RouteCoordinate,
-  end: RouteCoordinate
+  end: RouteCoordinate,
+  includeInstructions: boolean = true,
+  includeElevation: boolean = false
 ): Promise<RouteResult> {
   try {
     // OpenRouteService uses [longitude, latitude] order (GeoJSON format)
-    const requestBody = {
+    const requestBody: Record<string, unknown> = {
       coordinates: [
         [start.longitude, start.latitude],
         [end.longitude, end.latitude],
@@ -40,8 +62,14 @@ export async function calculateRoute(
       units: 'km',
       language: 'en',
       geometry: true,
-      instructions: false, // We don't need turn-by-turn for now
+      instructions: includeInstructions,
+      instructions_format: 'text',
     };
+
+    // Add elevation if requested (useful for battery consumption)
+    if (includeElevation) {
+      requestBody.elevation = true;
+    }
 
     const response = await fetch(BASE_URL, {
       method: 'POST',
@@ -53,10 +81,17 @@ export async function calculateRoute(
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('OpenRouteService error response:', errorText);
       throw new Error(`OpenRouteService error: ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
+
+    if (!data.routes || data.routes.length === 0) {
+      throw new Error('No routes found in OpenRouteService response');
+    }
+
     const route = data.routes[0];
     const summary = route.summary;
 
@@ -68,6 +103,8 @@ export async function calculateRoute(
       duration: summary.duration / 60, // Convert seconds to minutes
       geometry,
       bbox: route.bbox,
+      segments: route.segments || undefined,
+      elevation: route.elevation || undefined,
     };
   } catch (error) {
     console.error('Error calculating route:', error);

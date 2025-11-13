@@ -28,6 +28,7 @@ type Props = NativeStackScreenProps<MapStackParamList, 'PlanTrip'>;
 export default function PlanTripScreen({ navigation }: Props) {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
+  const [batteryPercent, setBatteryPercent] = useState(80); // Default 80%
   const [fromSuggestions, setFromSuggestions] = useState<GeocodingResult[]>([]);
   const [toSuggestions, setToSuggestions] = useState<GeocodingResult[]>([]);
   const [searchingFrom, setSearchingFrom] = useState(false);
@@ -133,7 +134,7 @@ export default function PlanTripScreen({ navigation }: Props) {
   const handlePlanRoute = () => {
     if (from && to) {
       Keyboard.dismiss();
-      navigation.navigate('TripRoute', { from, to });
+      navigation.navigate('TripRoute', { from, to, currentBatteryPercent: batteryPercent });
     }
   };
 
@@ -275,6 +276,33 @@ export default function PlanTripScreen({ navigation }: Props) {
           )}
         </View>
 
+        {/* Battery Level Selector */}
+        <View style={styles.batteryContainer}>
+          <Text style={styles.batteryLabel}>Current Battery Level</Text>
+          <View style={styles.batterySelector}>
+            {[20, 40, 60, 80, 100].map(level => (
+              <TouchableOpacity
+                key={level}
+                style={[
+                  styles.batteryOption,
+                  batteryPercent === level && styles.batteryOptionSelected,
+                ]}
+                onPress={() => setBatteryPercent(level)}
+              >
+                <Text
+                  style={[
+                    styles.batteryOptionText,
+                    batteryPercent === level && styles.batteryOptionTextSelected,
+                  ]}
+                >
+                  {level}%
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <Text style={styles.batteryHint}>Select your current battery percentage</Text>
+        </View>
+
         <TouchableOpacity
           style={[styles.button, (!from || !to) && styles.buttonDisabled]}
           onPress={handlePlanRoute}
@@ -388,6 +416,48 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: '600',
+    textAlign: 'center',
+  },
+  batteryContainer: {
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  batteryLabel: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '600',
+    marginBottom: 10,
+  },
+  batterySelector: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  batteryOption: {
+    flex: 1,
+    paddingVertical: 12,
+    marginHorizontal: 3,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    backgroundColor: '#f9f9f9',
+    alignItems: 'center',
+  },
+  batteryOptionSelected: {
+    backgroundColor: '#4CAF50',
+    borderColor: '#4CAF50',
+  },
+  batteryOptionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+  },
+  batteryOptionTextSelected: {
+    color: '#fff',
+  },
+  batteryHint: {
+    fontSize: 12,
+    color: '#999',
     textAlign: 'center',
   },
 });
