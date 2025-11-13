@@ -301,7 +301,10 @@ export default function MapHomeScreen({ navigation }: Props) {
 
       {/* Bottom content */}
       <View style={styles.bottomContent}>
-        {/* Greeting + info + car */}
+        {/* Back button + Greeting + info + car */}
+        <View style={{flexDirection:'row', alignItems:'center', marginBottom:6}}> Ch
+        </View>
+
         <View style={styles.greetingRow}>
           <View>
             <Text style={styles.greetingText}>Welcome back!</Text>
@@ -388,11 +391,10 @@ export default function MapHomeScreen({ navigation }: Props) {
                 })
                 .filter(Boolean) as EnrichedStation[];
 
-              const nearest10 = enriched
-                .sort((a, b) => a.distanceKm - b.distanceKm)
-                .slice(0, 10);
+              const nearest = enriched.sort((a, b) => a.distanceKm - b.distanceKm);
 
-              navigation.navigate('NearbyStations', { stations: nearest10 });
+              // Pass the full enriched list so NearbyStations can filter/sort by range
+              navigation.navigate('NearbyStations', { stations: nearest });
             }}
           >
             <MaterialCommunityIcons

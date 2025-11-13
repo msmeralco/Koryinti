@@ -56,7 +56,16 @@ export default function StationProfileScreen({ navigation, route }: Props) {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Charging Power</Text>
         <Text style={styles.text}>{station.powerKW.toFixed(0)} kW aggregate (est.)</Text>
-        <Text style={styles.text}>Plug Types: {station.plugTypes.join(', ') || 'Unknown'}</Text>
+        {station.plugTypes && station.plugTypes.length > 0 ? (
+          <View>
+            <Text style={styles.text}>Plug Types: {station.plugTypes.slice(0, Math.ceil(station.plugTypes.length / 2)).join(', ')}</Text>
+            {station.plugTypes.length > Math.ceil(station.plugTypes.length / 2) && (
+              <Text style={styles.text}>{station.plugTypes.slice(Math.ceil(station.plugTypes.length / 2)).join(', ')}</Text>
+            )}
+          </View>
+        ) : (
+          <Text style={styles.text}>Plug Types: Unknown</Text>
+        )}
       </View>
 
       <View style={styles.section}>
@@ -70,17 +79,7 @@ export default function StationProfileScreen({ navigation, route }: Props) {
         <TouchableOpacity style={[styles.primaryButton, isFull && {backgroundColor:'#9e9e9e'}]} disabled={isFull} onPress={handleReserve}>
           <Text style={styles.buttonText}>{isFull ? 'Full / Unavailable' : 'Reserve'}</Text>
         </TouchableOpacity>
-
-        <TouchableOpacity style={styles.secondaryButton}>
-          <Text style={styles.secondaryButtonText}>Directions</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.secondaryButton}
-          onPress={() => navigation.navigate('PlanTrip')}
-        >
-          <Text style={styles.secondaryButtonText}>Plan a Trip</Text>
-        </TouchableOpacity>
+        {/* Removed Directions and Plan a Trip actions per new UX spec */}
       </View>
     </ScrollView>
   );
@@ -89,74 +88,74 @@ export default function StationProfileScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#050A10',
   },
   header: {
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#08121a',
   },
   stationName: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 5,
+    color: '#FFFFFF',
+    marginBottom: 6,
   },
   rating: {
     fontSize: 16,
-    color: '#666',
+    color: '#C6CFD7',
   },
   subHeader: {
     fontSize: 14,
-    color: '#888',
+    color: '#C6CFD7',
     marginTop: 4,
   },
   section: {
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#08121a',
+    backgroundColor: '#07111a',
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: '#FFFFFF',
     marginBottom: 10,
   },
   text: {
     fontSize: 16,
-    color: '#666',
+    color: '#C6CFD7',
     marginBottom: 5,
   },
   availability: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#4CAF50',
+    color: '#46F98C',
   },
   buttonContainer: {
     padding: 20,
     gap: 12,
   },
   primaryButton: {
-    backgroundColor: '#4CAF50',
-    paddingVertical: 15,
+    backgroundColor: '#46F98C',
+    paddingVertical: 12,
     borderRadius: 8,
   },
   secondaryButton: {
-    backgroundColor: '#fff',
-    paddingVertical: 15,
+    backgroundColor: 'transparent',
+    paddingVertical: 12,
     borderRadius: 8,
-    borderWidth: 2,
-    borderColor: '#4CAF50',
+    borderWidth: 0,
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 18,
+    color: '#02110A',
+    fontSize: 16,
     fontWeight: '600',
     textAlign: 'center',
   },
   secondaryButtonText: {
-    color: '#4CAF50',
-    fontSize: 18,
+    color: '#C6CFD7',
+    fontSize: 16,
     fontWeight: '600',
     textAlign: 'center',
   },
