@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Image, Pressable, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/types/navigation';
 
@@ -14,11 +15,13 @@ export default function RegistrationScreen({ navigation }: Props) {
   };
 
   return (
-    <Pressable style={styles.container} onPress={handleGetStarted}>
-      <View>
-        <Image source={welcomeLogo} style={styles.logo} resizeMode="contain" />
-      </View>
-    </Pressable>
+    <SafeAreaView style={styles.container} edges={['top','left','right','bottom']}>
+      <Pressable style={styles.container} onPress={handleGetStarted}>
+        <View>
+          <Image source={welcomeLogo} style={styles.logo} resizeMode="contain" />
+        </View>
+      </Pressable>
+    </SafeAreaView>
   );
 }
 

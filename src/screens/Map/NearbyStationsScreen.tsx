@@ -1,6 +1,7 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import React, { useState, useMemo } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Pressable } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MapStackParamList, EnrichedStation } from '@/types/navigation';
 
@@ -11,6 +12,7 @@ const formatDistance = (km: number) =>
 
 export default function NearbyStationsScreen({ navigation, route }: Props) {
   const { stations } = route.params;
+  const [searchQuery, setSearchQuery] = useState('');
   const [sortKey, setSortKey] = React.useState<'distance'|'rating'|'availability'>('distance');
   const sortLabels: Record<'distance'|'rating'|'availability', string> = {
     distance: 'Distance',
@@ -25,7 +27,16 @@ export default function NearbyStationsScreen({ navigation, route }: Props) {
   const [rangeKm, setRangeKm] = React.useState<number>(10);
   const rangeSteps = [5, 10, 15, 20, 30, 40, 50];
 
-  const filtered = stations.filter(s => {
+  // Apply search first (case-insensitive on title or address)
+  const searchFiltered = useMemo(() => {
+    if (!searchQuery.trim()) return stations;
+    const q = searchQuery.toLowerCase();
+    return stations.filter(
+      s => s.title.toLowerCase().includes(q) || s.address.toLowerCase().includes(q)
+    );
+  }, [searchQuery, stations]);
+
+  const filtered = searchFiltered.filter(s => {
     if (showAvailableOnly && s.availablePlugs <= 0) return false;
     if (plugFilter && !s.plugTypes.includes(plugFilter)) return false;
     // respect the selected range: only include stations within rangeKm
@@ -44,7 +55,7 @@ export default function NearbyStationsScreen({ navigation, route }: Props) {
     }
   });
 
-  const distinctPlugTypes = Array.from(new Set(stations.flatMap(s => s.plugTypes))).slice(0, 6);
+  const distinctPlugTypes = Array.from(new Set(searchFiltered.flatMap(s => s.plugTypes))).slice(0, 6);
 
   const renderStation = ({ item }: { item: EnrichedStation }) => (
     <TouchableOpacity
@@ -88,7 +99,7 @@ export default function NearbyStationsScreen({ navigation, route }: Props) {
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top','left','right']}>
         <View style={styles.headerRow}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBackBtn}>
             <Feather name="arrow-left" size={20} color="#FFFFFF" />
@@ -98,6 +109,22 @@ export default function NearbyStationsScreen({ navigation, route }: Props) {
             <Text style={styles.headerSubtitle}>Showing {sorted.length} of {stations.length} stations</Text>
           </View>
         </View>
+
+      {/* Search bar */}
+      <View style={styles.searchRow}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search stations..."
+          placeholderTextColor="#6B7785"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+        {searchQuery.length > 0 && (
+          <Pressable style={styles.clearButton} onPress={() => setSearchQuery('')}>
+            <Ionicons name="close-circle" size={22} color="#C6CFD7" />
+          </Pressable>
+        )}
+      </View>
 
       <View style={styles.controlsRow}>
         <TouchableOpacity
@@ -174,9 +201,9 @@ export default function NearbyStationsScreen({ navigation, route }: Props) {
         renderItem={renderStation}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContent}
-        ListEmptyComponent={<Text style={{padding:20, color:'#c6cbd3'}}>No stations match filters.</Text>}
+        ListEmptyComponent={<Text style={{padding:20, color:'#c6cbd3'}}>No stations match search or filters.</Text>}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -184,6 +211,25 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#050A10',
+  },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0E171F',
+    marginHorizontal: 15,
+    marginTop: 12,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    height: 48,
+  },
+  searchInput: {
+    flex: 1,
+    color: '#FFFFFF',
+    fontSize: 16,
+  },
+  clearButton: {
+    paddingLeft: 6,
+    paddingVertical: 4,
   },
   listContent: {
     padding: 15,
@@ -243,6 +289,7 @@ const styles = StyleSheet.create({
   dropdownWrapper: {
     position: 'relative',
     alignSelf: 'flex-start',
+    minWidth: 100
   },
   dropdownAbsolute: {
     position: 'absolute',

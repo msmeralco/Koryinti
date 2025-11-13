@@ -1,21 +1,10 @@
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  FlatList,
-  ActivityIndicator,
-  Keyboard,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableWithoutFeedback,
-} from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, ActivityIndicator, Keyboard, Alert, KeyboardAvoidingView, Platform, TouchableWithoutFeedback } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MapStackParamList } from '@/types/navigation';
 import { useState, useEffect } from 'react';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import mapDarkStyle from './mapDarkStyle.json';
 import { searchPlaces, formatDisplayName, GeocodingResult } from '@/services/geocodingService';
 import * as Location from 'expo-location';
 import { getNearbyChargingStations } from '@/services/routeService';
@@ -247,12 +236,14 @@ export default function PlanTripScreen({ navigation }: Props) {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top','left','right']}>
         <MapView
           style={styles.map}
           initialRegion={region}
           region={region}
           provider={PROVIDER_GOOGLE}
+          googleMapId="508c49184e5a4073b3a02f38"
+          customMapStyle={mapDarkStyle as any}
           showsUserLocation
           showsMyLocationButton
         >
@@ -489,7 +480,7 @@ export default function PlanTripScreen({ navigation }: Props) {
             )}
           </View>
         </KeyboardAvoidingView>
-      </View>
+      </SafeAreaView>
     </TouchableWithoutFeedback>
   );
 }

@@ -7,12 +7,14 @@ import {
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { MapStackParamList, EnrichedStation } from '@/types/navigation';
 import { calculateDetailedRoute } from '@/services/routeCalculationEngine';
 import { DetailedRoute, RouteSegment } from '@/types/route-calculation';
+import mapDarkStyle from './mapDarkStyle.json';
 
 type Props = NativeStackScreenProps<MapStackParamList, 'TripRoute'>;
 
@@ -166,11 +168,13 @@ export default function TripRouteScreen({ navigation, route }: Props) {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top','left','right']}>
       <MapView
         style={styles.map}
         initialRegion={region}
         provider={PROVIDER_GOOGLE}
+        googleMapId="508c49184e5a4073b3a02f38"
+        customMapStyle={mapDarkStyle as any}
         showsUserLocation
       >
         {/* Route polyline */}
@@ -211,7 +215,7 @@ export default function TripRouteScreen({ navigation, route }: Props) {
         />
       </MapView>
 
-      <View style={[styles.bottomSheet, isDetailsCollapsed && styles.bottomSheetCollapsed]}>
+  <View style={[styles.bottomSheet, isDetailsCollapsed && styles.bottomSheetCollapsed]}>
         {/* Toggle button */}
         <TouchableOpacity
           style={styles.toggleButton}
@@ -350,7 +354,7 @@ export default function TripRouteScreen({ navigation, route }: Props) {
           </>
         )}
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 

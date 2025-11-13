@@ -1,5 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import RootNavigator from '@/navigation/RootNavigator';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 /**
  * App is the main entry point for the Revolt EV Charging Station app.
@@ -7,9 +8,9 @@ import RootNavigator from '@/navigation/RootNavigator';
  */
 export default function App() {
   return (
-    <>
+    <SafeAreaProvider>
       <RootNavigator />
       <StatusBar style="auto" />
-    </>
+    </SafeAreaProvider>
   );
 }
