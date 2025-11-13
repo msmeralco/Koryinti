@@ -12,15 +12,39 @@ export type MainTabsParamList = {
 
 export type MapStackParamList = {
   MapHome: undefined;
-  NearbyStations: undefined;
-  StationProfile: { stationId: string };
+  NearbyStations: { stations: EnrichedStation[] };
+  StationProfile: { station: EnrichedStation };
   ReserveStation: { stationId: string };
   ConfirmPayment: { stationId: string; reservationDetails: ReservationDetails };
   PlanTrip: undefined;
   TripRoute: { from: string; to: string };
-  ReservationDetails: { routeId: string; stations: string[] };
+  ReservationDetails: { routeId: string; stations: EnrichedStation[] };
   ScanQR: { reservationId: string };
   Rating: { stationId: string; reservationId: string };
+};
+
+export interface EnrichedStation {
+  id: string; // OpenChargeMap ID (stringified)
+  title: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  totalPlugs: number;
+  plugsInUse: number;
+  availablePlugs: number;
+  plugTypes: string[];
+  powerKW: number; // aggregate or max power in kW
+  distanceKm: number;
+  driveMinutes: number;
+  rating: number; // synthetic rating 1-5
+  pricePerKWh: number; // synthetic price
+  amenities: {
+    wifi: boolean;
+    bathroom: boolean;
+    pwdFriendly: boolean;
+    waitingLounge: boolean;
+  };
+  state: string;
 };
 
 export interface Station {
