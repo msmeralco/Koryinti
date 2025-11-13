@@ -1,4 +1,10 @@
 import { Station, Route } from '@/types/navigation';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  needsCharging,
+  estimateBatteryConsumption,
+  getDefaultVehicleSpecs,
+} from './vehicleDatabase';
 
 /**
  * RouteService handles route calculation and charging station optimization
@@ -83,10 +89,26 @@ interface RouteCalculationParams {
 
 /**
  * Calculate route with optimal charging stops
- * Currently returns mock data - will integrate with real routing API later
+ * Uses stored vehicle data to determine charging needs
  */
 export async function calculateRoute(params: RouteCalculationParams): Promise<Route> {
-  const { from, to, vehicleRange = 300, currentBatteryPercent = 80 } = params;
+  const { from, to } = params;
+
+  // Get vehicle data from storage
+  let vehicleData = null;
+  try {
+    const stored = await AsyncStorage.getItem('vehicleData');
+    vehicleData = stored ? JSON.parse(stored) : null;
+  } catch (error) {
+    console.error('Error loading vehicle data:', error);
+  }
+
+  // Use stored data or defaults
+  const defaultSpecs = getDefaultVehicleSpecs();
+  const vehicleRange = vehicleData?.range || params.vehicleRange || defaultSpecs.range;
+  const currentBatteryPercent =
+    vehicleData?.currentBatteryPercent || params.currentBatteryPercent || 80;
+  const batteryCapacity = vehicleData?.batteryCapacity || defaultSpecs.batteryCapacity;
 
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 1000));
@@ -96,14 +118,49 @@ export async function calculateRoute(params: RouteCalculationParams): Promise<Ro
   const distance = Math.floor(Math.random() * 100) + 50; // 50-150km
   const estimatedTime = Math.floor(distance / 60); // hours (assuming 60km/h avg)
 
-  // Calculate how many charging stops needed
-  const currentRange = (vehicleRange * currentBatteryPercent) / 100;
-  const needsCharging = distance > currentRange * 0.8; // Charge if < 20% buffer
+  // Check if charging is needed using the smart logic
+  const requiresCharging = needsCharging(currentBatteryPercent, distance, vehicleRange, 20);
 
-  // Find stations along route (mock - in reality, filter by route path)
-  const suggestedStations = needsCharging
-    ? MOCK_CHARGING_STATIONS.slice(0, 2) // Suggest 2 stations
-    : [];
+  // Calculate battery consumption for this trip
+  const batteryUsed = estimateBatteryConsumption(distance, batteryCapacity);
+  const batteryAfterTrip = currentBatteryPercent - batteryUsed;
+
+  // Log for debugging (will be visible in Expo)
+  if (__DEV__) {
+    console.warn('Route Calculation:', {
+      from,
+      to,
+      distance,
+      currentBattery: currentBatteryPercent,
+      batteryAfterTrip: batteryAfterTrip.toFixed(1),
+      requiresCharging,
+      vehicleRange,
+    });
+  }
+
+  // Find optimal charging stations if needed
+  let suggestedStations: Station[] = [];
+  if (requiresCharging) {
+    // Strategy: Select stations based on:
+    // 1. Distance from start (prefer middle of route)
+    // 2. Charging speed (prefer fast chargers)
+    // 3. Availability (prefer stations with available chargers)
+
+    const sortedStations = MOCK_CHARGING_STATIONS.slice()
+      .filter(s => s.availableChargers > 0)
+      .sort((a, b) => {
+        // Prefer fast charging stations
+        const speedScore = (station: Station) => {
+          if (station.chargingSpeed.includes('Ultra')) return 3;
+          if (station.chargingSpeed.includes('Fast')) return 2;
+          return 1;
+        };
+        return speedScore(b) - speedScore(a);
+      });
+
+    // Take top 2 stations for this route
+    suggestedStations = sortedStations.slice(0, 2);
+  }
 
   return {
     id: `route-${Date.now()}`,

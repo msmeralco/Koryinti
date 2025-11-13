@@ -1,8 +1,18 @@
-import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  FlatList,
+  ActivityIndicator,
+  Keyboard,
+} from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MapStackParamList } from '@/types/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import { searchPlaces, formatDisplayName, GeocodingResult } from '@/services/geocodingService';
 
 type Props = NativeStackScreenProps<MapStackParamList, 'PlanTrip'>;
 
@@ -14,6 +24,11 @@ type Props = NativeStackScreenProps<MapStackParamList, 'PlanTrip'>;
 export default function PlanTripScreen({ navigation }: Props) {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
+  const [fromSuggestions, setFromSuggestions] = useState<GeocodingResult[]>([]);
+  const [toSuggestions, setToSuggestions] = useState<GeocodingResult[]>([]);
+  const [searchingFrom, setSearchingFrom] = useState(false);
+  const [searchingTo, setSearchingTo] = useState(false);
+  const [activeField, setActiveField] = useState<'from' | 'to' | null>(null);
 
   // Default map region (Central Manila, Metro Manila, Philippines)
   const [region] = useState({
@@ -23,10 +38,55 @@ export default function PlanTripScreen({ navigation }: Props) {
     longitudeDelta: 0.0421,
   });
 
+  // Debounced search for "From" field
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (from.length >= 3 && activeField === 'from') {
+        setSearchingFrom(true);
+        const results = await searchPlaces(from);
+        setFromSuggestions(results);
+        setSearchingFrom(false);
+      } else {
+        setFromSuggestions([]);
+      }
+    }, 500); // Wait 500ms after user stops typing
+
+    return () => clearTimeout(timer);
+  }, [from, activeField]);
+
+  // Debounced search for "To" field
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (to.length >= 3 && activeField === 'to') {
+        setSearchingTo(true);
+        const results = await searchPlaces(to);
+        setToSuggestions(results);
+        setSearchingTo(false);
+      } else {
+        setToSuggestions([]);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [to, activeField]);
+
   const handlePlanRoute = () => {
     if (from && to) {
+      Keyboard.dismiss();
       navigation.navigate('TripRoute', { from, to });
     }
+  };
+
+  const selectFromSuggestion = (result: GeocodingResult) => {
+    setFrom(formatDisplayName(result.display_name));
+    setFromSuggestions([]);
+    setActiveField(null);
+  };
+
+  const selectToSuggestion = (result: GeocodingResult) => {
+    setTo(formatDisplayName(result.display_name));
+    setToSuggestions([]);
+    setActiveField(null);
   };
 
   return (
@@ -56,20 +116,76 @@ export default function PlanTripScreen({ navigation }: Props) {
           <Text style={styles.inputLabel}>From</Text>
           <TextInput
             style={styles.input}
-            placeholder="Starting location"
+            placeholder="Search: SM Mall of Asia, Makati, etc."
             value={from}
-            onChangeText={setFrom}
+            onChangeText={text => {
+              setFrom(text);
+              setActiveField('from');
+            }}
+            onFocus={() => setActiveField('from')}
           />
+          {searchingFrom && (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color="#4CAF50" />
+            </View>
+          )}
+          {fromSuggestions.length > 0 && activeField === 'from' && (
+            <View style={styles.suggestionsContainer}>
+              <FlatList
+                data={fromSuggestions}
+                keyExtractor={item => item.place_id.toString()}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.suggestionItem}
+                    onPress={() => selectFromSuggestion(item)}
+                  >
+                    <Text style={styles.suggestionText}>
+                      📍 {formatDisplayName(item.display_name)}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+                style={styles.suggestionsList}
+              />
+            </View>
+          )}
         </View>
 
         <View style={styles.inputWrapper}>
           <Text style={styles.inputLabel}>To</Text>
           <TextInput
             style={styles.input}
-            placeholder="Destination"
+            placeholder="Search destination..."
             value={to}
-            onChangeText={setTo}
+            onChangeText={text => {
+              setTo(text);
+              setActiveField('to');
+            }}
+            onFocus={() => setActiveField('to')}
           />
+          {searchingTo && (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color="#4CAF50" />
+            </View>
+          )}
+          {toSuggestions.length > 0 && activeField === 'to' && (
+            <View style={styles.suggestionsContainer}>
+              <FlatList
+                data={toSuggestions}
+                keyExtractor={item => item.place_id.toString()}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.suggestionItem}
+                    onPress={() => selectToSuggestion(item)}
+                  >
+                    <Text style={styles.suggestionText}>
+                      📍 {formatDisplayName(item.display_name)}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+                style={styles.suggestionsList}
+              />
+            </View>
+          )}
         </View>
 
         <TouchableOpacity
@@ -111,6 +227,7 @@ const styles = StyleSheet.create({
   },
   inputWrapper: {
     marginBottom: 15,
+    position: 'relative',
   },
   inputLabel: {
     fontSize: 14,
@@ -124,6 +241,38 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 15,
     fontSize: 16,
+  },
+  loadingContainer: {
+    position: 'absolute',
+    right: 15,
+    top: 40,
+  },
+  suggestionsContainer: {
+    position: 'absolute',
+    top: 75,
+    left: 0,
+    right: 0,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 5,
+    maxHeight: 200,
+    zIndex: 1000,
+  },
+  suggestionsList: {
+    borderRadius: 10,
+  },
+  suggestionItem: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  suggestionText: {
+    fontSize: 14,
+    color: '#333',
   },
   button: {
     backgroundColor: '#4CAF50',
