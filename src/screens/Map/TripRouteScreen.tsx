@@ -14,7 +14,7 @@ import { calculateRoute } from '@/services/routeService';
 
 type Props = NativeStackScreenProps<MapStackParamList, 'TripRoute'>;
 
-/**
+/**s
  * TripRouteScreen displays the suggested route with recommended
  * charging stops. Users can view the full route details and proceed
  * to reserve chargers at the suggested stations.
