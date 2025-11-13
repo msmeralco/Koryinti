@@ -53,15 +53,23 @@ export default function MapHomeScreen({ navigation }: Props) {
       setLoading(true);
       setError(null);
       try {
-        // Use latitude/longitude search centered on Manila instead of boundingbox
-        // This is more reliable for OpenChargeMap API
-        const centerLat = 14.5995;
-        const centerLng = 120.9842;
-        const radiusKM = 100; // Search within 100km of Manila
+        // Specify bounding box with top-left and bottom-right corners as (lat,lng),(lat2,lng2)
+        // Top-left (lat, lng) = approximate NW corner of Philippines
+        const topLeftLat = 21.0;
+        const topLeftLng = 116.9;
+        // Bottom-right (lat2, lng2) = approximate SE corner of Philippines
+        const bottomRightLat = 4.5;
+        const bottomRightLng = 127.8;
 
-        const url = `https://api.openchargemap.io/v3/poi?key=${OPENCHARGEMAP_API_KEY}&latitude=${centerLat}&longitude=${centerLng}&distance=${radiusKM}&distanceunit=KM&maxresults=500`;
+        // OpenChargeMap expects boundingbox as [minLat, minLng, maxLat, maxLng]
+        const minLat = Math.min(topLeftLat, bottomRightLat);
+        const maxLat = Math.max(topLeftLat, bottomRightLat);
+        const minLng = Math.min(topLeftLng, bottomRightLng);
+        const maxLng = Math.max(topLeftLng, bottomRightLng);
 
-        console.warn('🌐 Fetching from URL:', url.substring(0, 100) + '...');
+        // Use comma-separated values (no brackets) to avoid encoding issues
+        const url = `https://api.openchargemap.io/v3/poi?key=${OPENCHARGEMAP_API_KEY}&boundingbox=${minLat},${minLng},${maxLat},${maxLng}&maxresults=500`;
+
         const resp = await fetch(url);
         console.warn('📡 Response status:', resp.status);
         if (!resp.ok) throw new Error(`OpenChargeMap request failed: ${resp.status}`);
