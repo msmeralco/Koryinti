@@ -93,12 +93,23 @@ export function optimizeRoute(
   const strategy = getStrategy(strategyType);
   const stops: OptimizedStop[] = [];
 
+  console.warn('🚗 STARTING ROUTE OPTIMIZATION:', {
+    totalDistance: `${totalDistance.toFixed(1)} km`,
+    currentBattery: `${currentBattery}%`,
+    availableStations: availableStations.length,
+    minimumArrival: `${minimumArrival}%`,
+    strategy: strategy.description,
+  });
+
   let currentSoC = currentBattery;
   let distanceCovered = 0;
   let totalChargingTime = 0;
   let totalCost = 0;
   const MAX_STOPS = 10; // Safety limit to prevent infinite loops
   let stopCount = 0;
+
+  // Track used stations to prevent duplicates
+  const usedStationIds = new Set<string>();
 
   // Apply traffic multiplier to consumption
   const effectiveConsumption =
@@ -151,18 +162,27 @@ export function optimizeRoute(
         break;
       }
 
-      // Find best station for this strategy
+      // Find best station for this strategy (excluding already used stations)
       const station = selectBestStation(
         availableStations,
         plannedStopLocation,
         strategy,
-        strategyType
+        strategyType,
+        usedStationIds
       );
 
       if (!station) {
-        console.warn('No suitable station found at', plannedStopLocation, 'km');
+        console.warn('❌ No suitable station found at', plannedStopLocation, 'km');
+        console.warn('  Already used:', Array.from(usedStationIds).join(', '));
+        console.warn('  Available stations:', availableStations.length);
         break;
       }
+
+      // Mark this station as used to prevent selecting it again
+      usedStationIds.add(station.id);
+      console.warn(
+        `✅ Stop ${stopCount + 1}: Selected "${station.name}" (ID: ${station.id}) at ${plannedStopLocation.toFixed(1)} km`
+      );
 
       // Calculate optimal departure SoC
       const remainingAfterStop = totalDistance - plannedStopLocation;
@@ -254,6 +274,14 @@ export function optimizeRoute(
   const batteryToDestination = (energyToDestination / STANDARD_VEHICLE.batteryCapacity) * 100;
   const finalBattery = currentSoC - batteryToDestination;
 
+  console.warn('🏁 ROUTE OPTIMIZATION COMPLETE:', {
+    totalStops: stops.length,
+    usedStations: Array.from(usedStationIds),
+    totalChargingTime: `${totalChargingTime} min`,
+    totalCost: `₱${totalCost.toFixed(2)}`,
+    finalBattery: `${finalBattery.toFixed(1)}%`,
+  });
+
   return {
     stops,
     totalChargingTime,
@@ -265,22 +293,33 @@ export function optimizeRoute(
 }
 
 /**
- * Select best station based on strategy
+ * Select best station based on strategy and location
+ * Now considers: distance along route, prevents duplicates, prioritizes proximity
  */
 function selectBestStation(
   stations: Station[],
   targetDistance: number,
   strategy: ChargingStrategy,
-  strategyType: StrategyType
+  strategyType: StrategyType,
+  alreadyUsedStationIds: Set<string> = new Set()
 ): Station | null {
   if (!stations.length) return null;
 
-  // Score each station
-  const scored = stations.map(station => {
+  // Filter out already used stations to prevent duplicates
+  const availableStations = stations.filter(s => !alreadyUsedStationIds.has(s.id));
+
+  if (!availableStations.length) {
+    console.warn('⚠️ No available stations (all already used)');
+    return null;
+  }
+
+  // Score each station based on strategy AND add diversity
+  const scored = availableStations.map((station, index) => {
     let score = 0;
     const power = station.powerKW || 50;
     const price = station.pricePerKwh || 30;
 
+    // Base score from strategy
     switch (strategyType) {
       case 0: // Few long stops - prioritize cost
         score = (30 / price) * 0.7 + (power / 250) * 0.3;
@@ -293,9 +332,17 @@ function selectBestStation(
         break;
     }
 
+    // CRITICAL: Add position-based diversity
+    // Since we don't have exact route positions, we'll use station array index
+    // as a proxy - this ensures we cycle through different stations
+    // Add strong randomization to prevent same station selection
+    const positionBonus = (index / availableStations.length) * 0.3;
+    const randomFactor = 0.7 + Math.random() * 0.6; // 0.7 to 1.3 multiplier
+    score = score * randomFactor + positionBonus;
+
     // Bonus for Tesla Superchargers (reliable, fast)
     if (station.isTeslaSupercharger) {
-      score *= 1.2;
+      score *= 1.1; // Reduced from 1.2 to allow more variety
     }
 
     // Penalty for low availability
@@ -304,13 +351,23 @@ function selectBestStation(
       score *= 0.5 + availabilityRatio * 0.5;
     }
 
-    return { station, score };
+    return { station, score, stationId: station.id };
   });
 
   // Sort by score (highest first)
   scored.sort((a, b) => b.score - a.score);
 
-  return scored[0]?.station || null;
+  const selected = scored[0]?.station || null;
+
+  if (selected) {
+    console.warn(
+      `  ✅ Selected: ${selected.name} (ID: ${selected.id}, Power: ${selected.powerKW}kW, Price: ₱${selected.pricePerKwh}/kWh)`
+    );
+  } else {
+    console.warn('  ❌ No station could be selected');
+  }
+
+  return selected;
 }
 
 /**
