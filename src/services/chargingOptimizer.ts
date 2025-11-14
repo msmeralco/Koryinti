@@ -107,7 +107,7 @@ export function optimizeRoute(
   let totalCost = 0;
   const MAX_STOPS = 10; // Safety limit to prevent infinite loops
   let stopCount = 0;
-  
+
   // Track used stations to prevent duplicates
   const usedStationIds = new Set<string>();
 
@@ -177,10 +177,12 @@ export function optimizeRoute(
         console.warn('  Available stations:', availableStations.length);
         break;
       }
-      
+
       // Mark this station as used to prevent selecting it again
       usedStationIds.add(station.id);
-      console.warn(`✅ Stop ${stopCount + 1}: Selected "${station.name}" (ID: ${station.id}) at ${plannedStopLocation.toFixed(1)} km`);
+      console.warn(
+        `✅ Stop ${stopCount + 1}: Selected "${station.name}" (ID: ${station.id}) at ${plannedStopLocation.toFixed(1)} km`
+      );
 
       // Calculate optimal departure SoC
       const remainingAfterStop = totalDistance - plannedStopLocation;
@@ -305,7 +307,7 @@ function selectBestStation(
 
   // Filter out already used stations to prevent duplicates
   const availableStations = stations.filter(s => !alreadyUsedStationIds.has(s.id));
-  
+
   if (!availableStations.length) {
     console.warn('⚠️ No available stations (all already used)');
     return null;
@@ -356,9 +358,11 @@ function selectBestStation(
   scored.sort((a, b) => b.score - a.score);
 
   const selected = scored[0]?.station || null;
-  
+
   if (selected) {
-    console.warn(`  ✅ Selected: ${selected.name} (ID: ${selected.id}, Power: ${selected.powerKW}kW, Price: ₱${selected.pricePerKwh}/kWh)`);
+    console.warn(
+      `  ✅ Selected: ${selected.name} (ID: ${selected.id}, Power: ${selected.powerKW}kW, Price: ₱${selected.pricePerKwh}/kWh)`
+    );
   } else {
     console.warn('  ❌ No station could be selected');
   }
