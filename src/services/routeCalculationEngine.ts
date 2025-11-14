@@ -5,7 +5,7 @@
 
 import { searchPlaces } from './geocodingService';
 import { calculateRoute as calculateOpenRoute, RouteResult } from './openRouteService';
-import { searchStationsAlongRoute, filterStations } from './openChargeMapService';
+import { searchStationsAlongRoute } from './openChargeMapService';
 import {
   getStandardVehicle,
   calculateBatteryConsumption,
@@ -102,13 +102,10 @@ export async function calculateDetailedRoute(
     if (requiresCharging) {
       const rawStations = await searchStationsAlongRoute(routeData.geometry, maxDetourKm);
       console.warn(`🔍 Found ${rawStations.length} raw charging stations`);
-      const filtered = filterStations(rawStations, {
-        onlyAvailable: false, // Don't filter by availability - many stations don't report this
-        onlyFastChargers: false, // Accept all chargers for demo
-        minPowerKW: undefined, // No minimum power requirement for demo
-      });
-      console.warn(`✅ Filtered to ${filtered.length} suitable charging stations`);
-      chargingStations = convertStationsToAppFormat(filtered);
+      // REMOVED FILTERS - Accept ALL stations for better proximity and variety
+      // This prevents the algorithm from getting stuck with no options
+      console.warn(`✅ Using all ${rawStations.length} charging stations (no filters)`);
+      chargingStations = convertStationsToAppFormat(rawStations);
     }
 
     // Step 5: Plan optimal charging stops using ABRP optimizer

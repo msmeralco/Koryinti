@@ -71,35 +71,6 @@ npm start
 ## App Flow Overview
 
 ```
-┌─────────────────┐
-│  Registration   │  → Simple welcome (no auth for MVP)
-└────────┬────────┘
-         ↓
-┌─────────────────┐
-│  Add Vehicle    │  → Optional vehicle info
-└────────┬────────┘
-         ↓
-┌─────────────────────────────────────┐
-│          Main App (Tabs)            │
-├─────────┬──────────────┬────────────┤
-│   Map   │ Reservations │  Profile   │
-└─────────┴──────────────┴────────────┘
-     ↓
-Map Flow:
-1. Find Nearby Stations → Station List
-2. Select Station → Station Profile (Details, Reserve, Directions)
-3. Reserve → Confirm Payment
-4. Active Reservation → Scan QR → Start Charging
-5. Complete Session → Rate Experience
-
-Trip Planning Flow:
-1. Plan a Trip → Enter From/To locations
-2. View Suggested Route → See charging stops
-3. Reserve Chargers → Multi-station booking
-4. Track Reservation → Manage stops
-```
-
----
 
 ## Tech Stack
 
@@ -119,20 +90,22 @@ Trip Planning Flow:
 ## Project Structure
 
 ```
+
 Revolt/
 ├── src/
-│   ├── navigation/       # Navigation configuration
-│   ├── screens/          # Screen components by feature
-│   │   ├── Auth/         # Registration, Add Vehicle
-│   │   ├── Map/          # 10 map-related screens
-│   │   ├── Profile/      # User profile
-│   │   └── Reservations/ # Booking history
-│   └── types/            # TypeScript definitions
-├── .github/workflows/    # CI/CD pipelines
-├── .vscode/              # Editor configuration
-├── App.tsx               # Entry point
-└── DEVELOPMENT.md        # Detailed dev guide
-```
+│ ├── navigation/ # Navigation configuration
+│ ├── screens/ # Screen components by feature
+│ │ ├── Auth/ # Registration, Add Vehicle
+│ │ ├── Map/ # 10 map-related screens
+│ │ ├── Profile/ # User profile
+│ │ └── Reservations/ # Booking history
+│ └── types/ # TypeScript definitions
+├── .github/workflows/ # CI/CD pipelines
+├── .vscode/ # Editor configuration
+├── App.tsx # Entry point
+└── DEVELOPMENT.md # Detailed dev guide
+
+````
 
 ---
 
@@ -165,7 +138,7 @@ git commit -m "feat: add new feature"
 
 # 5. Push and create PR
 git push origin feature/my-feature
-```
+````
 
 **See [DEVELOPMENT.md](./DEVELOPMENT.md) for detailed guidelines.**
 
@@ -222,7 +195,7 @@ Every push and PR automatically runs:
 ## Development Scripts
 
 ```bash
-npm start          # Start Expo dev server
+npx expo start --tunnel          # Start Expo dev server
 npm run android    # Run on Android
 npm run ios        # Run on iOS
 npm run lint       # Check code quality
@@ -230,27 +203,6 @@ npm run lint:fix   # Auto-fix issues
 npm run format     # Format code
 npm run type-check # TypeScript validation
 ```
-
----
-
-## Screen Reference
-
-| Screen             | Purpose               | Navigation                  |
-| ------------------ | --------------------- | --------------------------- |
-| Registration       | Welcome screen        | → AddVehicle                |
-| AddVehicle         | Vehicle setup         | → MainTabs                  |
-| MapHome            | Main map view         | → NearbyStations / PlanTrip |
-| NearbyStations     | Station list          | → StationProfile            |
-| StationProfile     | Station details       | → ReserveStation            |
-| ReserveStation     | Time/duration picker  | → ConfirmPayment            |
-| ConfirmPayment     | Payment screen        | → ReservationDetails        |
-| PlanTrip           | Route input           | → TripRoute                 |
-| TripRoute          | Route with stops      | → ReservationDetails        |
-| ReservationDetails | Active booking        | → ScanQR                    |
-| ScanQR             | QR code scanner       | → Rating                    |
-| Rating             | Post-session feedback | → MapHome                   |
-| Profile            | User settings         | -                           |
-| Reservations       | Booking history       | -                           |
 
 ---
 
@@ -273,18 +225,6 @@ export default function StationProfileScreen({ navigation, route }: Props) {
   // Implementation
 }
 ```
-
----
-
-## Known Issues / MVP Limitations
-
-- Mock data for stations (no backend integration)
-- Simulated QR scanning (no camera access)
-- Placeholder payment flow (no Stripe integration)
-- No real-time availability updates
-- Simplified authentication (no user accounts)
-
-**These are intentional MVP constraints. Full features planned for future releases.**
 
 ---
 
